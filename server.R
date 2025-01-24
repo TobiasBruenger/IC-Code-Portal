@@ -509,69 +509,6 @@ shinyServer(function(input, output, session) { #####
     )
   }
    
-   observeEvent(input$naming_btn, {
-     # Toggle the visibility of the 'more content' div
-     toggle("naming_content")
-   })
-   
-   observeEvent(input$fluency_btn, {
-     # Toggle the visibility of the 'more content' div
-     toggle("fluency_content")
-   })
-   
-   observeEvent(input$word_list_delayed_recall_btn, {
-     # Toggle the visibility of the 'more content' div
-     toggle("word_list_delayed_recall_content")
-   })
-   
-   observeEvent(input$sp_delay_recall_btn, {
-     toggle("sp_delay_recall_content")
-   })
-   
-   observeEvent(input$wp_delay_recall_btn, {
-     toggle("wp_delay_recall_content")
-   })
-   
-   observeEvent(input$d_delay_recall_btn, {
-     toggle("d_delay_recall_content")
-   })
-   
-   observeEvent(input$ss_btn, {
-     toggle("ss_content")
-   })
-   
-   observeEvent(input$ps_btn, {
-     toggle("ps_content")
-   })
-   
-   observeEvent(input$ri_btn, {
-     toggle("ri_content")
-   })
-   
-   observeEvent(input$a_btn, {
-     toggle("a_content")
-   })
-   
-   observeEvent(input$pro_s_btn, {
-     toggle("pro_s_content")
-   })
-   
-   observeEvent(input$vc_btn, {
-     toggle("vc_content")
-   })
-   
-   observeEvent(input$vp_btn, {
-     toggle("vp_content")
-   })
-   
-   observeEvent(input$depression_btn, {
-     toggle("depression_content")
-   })
-   
-   observeEvent(input$anxiety_btn, {
-     toggle("anxiety_content")
-   })
-   
    # Create a mapping between category names and button input IDs
    category_to_button_id <- c(
      "Naming" = "naming_btn",
@@ -593,40 +530,102 @@ shinyServer(function(input, output, session) { #####
    category_to_ui_id <- gsub("_btn$", "", category_to_button_id)
    category_to_ui_id <- sapply(category_to_ui_id, function(cat) paste0(cat, "_content_ui"))
    
+
    # Function to generate UI for each category
-   generateCategoryUI <- function(category_name) {
-     category_id <- category_to_button_id[category_name]
-     ui_output_id <- category_to_ui_id[category_name]
-     
-     output[[ui_output_id]] <- renderUI({
-       if (input[[category_id]] > 0) {
-         test_names <- all_tests[[category_name]]
-         selected_values <- rep(FALSE, length(test_names))
-         tagList(
-           generatenameUI(category_name),
-           lapply(1:length(test_names), function(i) {
-             sanitized_name <- sanitizeTestName(test_names[i])
-             generatemeasureUI(test_names[i], paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$scaleSelection, paste0(sanitized_name, "_checkbox"), i == 1)
-           })
-         )
-       }
+   initializeCategoryUIs <- function(categories, category_to_ui_id, category_to_button_id) {
+     # Iterate through each category
+     lapply(categories, function(category_name) {
+       ui_output_id <- category_to_ui_id[[category_name]]
+       category_id <- category_to_button_id[[category_name]]
+       
+       # Assign dynamic output
+       output[[ui_output_id]] <- renderUI({
+         
+         if (input[[category_id]] > 0) {
+           test_names <- all_tests[[category_name]]
+           selected_values <- rep(FALSE, length(test_names))
+
+           tagList(
+             generatenameUI(category_name),
+             lapply(1:length(test_names), function(i) {
+               sanitized_name <- sanitizeTestName(test_names[i])
+               cat("Input scaleSelection:", input$scaleSelection, "\n", test_names[i],sanitized_name,"\n")
+               generatemeasureUI(test_names[i], paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$scaleSelection, paste0(sanitized_name, "_checkbox"), i == 1)
+             })
+           )
+         }
+         
+       })
      })
    }
+   
+   # Call the function for each category
+   initializeCategoryUIs(names(category_to_ui_id), category_to_ui_id, category_to_button_id)
 
    # Call the function for each category
-   generateCategoryUI("Naming")
-   generateCategoryUI("Fluency")
-   generateCategoryUI("Word List Delayed Recall")
-   generateCategoryUI("Story/Prose Delayed Recall")
-   generateCategoryUI("Word Pair Delayed Recall")
-   generateCategoryUI("Design Delayed Recall")
-   generateCategoryUI("Set-Shifting")
-   generateCategoryUI("Problem-Solving")
-   generateCategoryUI("Response Inhibition")
-   generateCategoryUI("Attention / Working Memory")
-   generateCategoryUI("Processing Speed")
-   generateCategoryUI("Visuoconstruction")
-   generateCategoryUI("Visuoperception")
+   
+   observeEvent(input$naming_btn, {
+     # Toggle the visibility of the 'more content' div
+     toggle("naming_content")
+   })
+
+   observeEvent(input$fluency_btn, {
+     # Toggle the visibility of the 'more content' div
+     toggle("fluency_content")
+   })
+
+   observeEvent(input$word_list_delayed_recall_btn, {
+     # Toggle the visibility of the 'more content' div
+     toggle("word_list_delayed_recall_content")
+   })
+
+   observeEvent(input$sp_delay_recall_btn, {
+     toggle("sp_delay_recall_content")
+   })
+
+   observeEvent(input$wp_delay_recall_btn, {
+     toggle("wp_delay_recall_content")
+   })
+
+   observeEvent(input$d_delay_recall_btn, {
+     toggle("d_delay_recall_content")
+   })
+
+   observeEvent(input$ss_btn, {
+     toggle("ss_content")
+   })
+
+   observeEvent(input$ps_btn, {
+     toggle("ps_content")
+   })
+
+   observeEvent(input$ri_btn, {
+     toggle("ri_content")
+   })
+
+   observeEvent(input$a_btn, {
+     toggle("a_content")
+   })
+
+   observeEvent(input$pro_s_btn, {
+     toggle("pro_s_content")
+   })
+
+   observeEvent(input$vc_btn, {
+     toggle("vc_content")
+   })
+
+   observeEvent(input$vp_btn, {
+     toggle("vp_content")
+   })
+   
+   observeEvent(input$depression_btn, {
+     toggle("depression_content")
+   })
+   
+   observeEvent(input$anxiety_btn, {
+     toggle("anxiety_content")
+   })
    
 
    #generat measureUi with observer function to check for checkbox changes 
@@ -776,6 +775,8 @@ shinyServer(function(input, output, session) { #####
      #resetMoodTests() -does not work 
      #resetCheckedMoodCheckboxes()
      
+     cat("Should not run unless reset is pressed")
+     
      #hide domains 
      toggle("naming_content")
      toggle("fluency_content")
@@ -904,6 +905,7 @@ shinyServer(function(input, output, session) { #####
   lapply(names(all_tests), function(category) {
     output[[paste0(sanitizeTestName_MG(category), "_content_ui_MG")]] <- renderUI({
       test_names <- all_tests[[category]]
+      # Log test names for the category
       lapply(seq_along(test_names), function(index) {
         test_name <- test_names[index]
         sanitized_name <- sanitizeTestName_MG(test_name)
