@@ -29,6 +29,7 @@ goodbye <- c("zoomIn2d", "zoomOut2d", "hoverClosestGeo", "hoverClosestGl2d",
              "hoverClosestCartesian","lasso2d","select2d","resetScale2d",
              "hoverCompareCartesian", "hoverClosestPie","toggleSpikelines")
 
+
 #Test categories 
 all_tests <- list(
   Naming = c(
@@ -234,6 +235,7 @@ test_to_category <- function(test_name) {
 
 generate_modifier_output <- function(category, test_name, score) {
   modifier_output <- ""
+
   # 
   if (!is.na(score)) {
     score_interpretation <- score_interpretations[[category]][[test_name]]
@@ -271,12 +273,23 @@ mood_tests <- list(
   Depression = c(
     "Beck Depression Inventory (BDI-2)",
     "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)",
-    "Patient Health Questionnaire Depression Scale (PHQ-9)"
+    "Patient Health Questionnaire Depression Scale (PHQ-9)",
+    "Children’s Depression Inventory (CDI)",
+    "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)"
+    
   ),
   Anxiety = c(
     "Beck Anxiety Inventory (BAI)",
     "Generalized Anxiety Disorder (GAD-7)",
-    "Multidimensional Anxiety Questionnaire (MAQ)"
+    "Multidimensional Anxiety Questionnaire (MAQ)",
+    "Screen for Child Anxiety Related Disorders (SCARED)",
+    "Multidimensional Anxiety Scale for Children (MASC)",
+    "Revised Children’s Manifest Anxiety Scale (RCMAS)"
+  ),
+  Behavior = c(
+    "Children’s Behavior Checklist (CBCL)",
+    "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory",
+    "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory"
   )
 )
 
@@ -300,9 +313,17 @@ moodtest_to_category <- c(
   "Beck Depression Inventory (BDI-2)" = "Depression",
   "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)" = "Depression",
   "Patient Health Questionnaire Depression Scale (PHQ-9)" = "Depression",
+  "Children’s Depression Inventory (CDI)" = "Depression",
+  "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)" = "Depression",
   "Beck Anxiety Inventory (BAI)" = "Anxiety",
   "Generalized Anxiety Disorder (GAD-7)" = "Anxiety",
-  "Multidimensional Anxiety Questionnaire (MAQ)" = "Anxiety"
+  "Multidimensional Anxiety Questionnaire (MAQ)" = "Anxiety",
+  "Screen for Child Anxiety Related Disorders (SCARED)" = "Anxiety",
+  "Multidimensional Anxiety Scale for Children (MASC)" = "Anxiety",
+  "Revised Children’s Manifest Anxiety Scale (RCMAS)" = "Anxiety",
+  "Children’s Behavior Checklist (CBCL)" = "Behavior",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory" = "Behavior",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory" = "Behavior"
 )
 
 #values for test interpretation 
@@ -310,9 +331,19 @@ interpretations <- list(
   "Beck Depression Inventory (BDI-2)" = "0-13 – Minimal Depressive Symptoms<br>14-19 – Mild Depressive Symptoms<br>20-28 – Moderate Depressive Symptoms<br>29-63 – Severe Depressive Symptoms",
   "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)" = "<14 – Minimal Depressive Symptoms<br>>15 – Elevated Depressive Symptoms",
   "Patient Health Questionnaire Depression Scale (PHQ-9)" = "0-4 – Minimal Depressive Symptoms<br>5-9 – Mild Depressive Symptoms<br>10-14 – Moderate Depressive Symptoms<br>15-19 – Moderately Severe Depressive Symptoms<br>20-27 – Severe Depressive Symptoms",
+  "Children’s Depression Inventory (CDI)" = "<40 – Low<br>40-59 – Average<br>60-64 – High Average<br>65-69 – Elevated<br>70+ – Very Elevated",
+  "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)" = "<40 – Low<br>40-59 – Average<br>60-64 – High Average<br>65-69 – Elevated<br>70+ – Very Elevated",
+  #Anxiety 
   "Beck Anxiety Inventory (BAI)" = "0-7 – Minimal Anxiety Symptoms<br>8-15 – Mild Anxiety Symptoms<br>16-25 – Moderate Anxiety Symptoms<br>26-63 – Severe Anxiety Symptoms",
   "Generalized Anxiety Disorder (GAD-7)" = "0-4 – Minimal Anxiety Symptoms<br>5-9 – Mild Anxiety Symptoms<br>10-14 – Moderate Anxiety Symptoms<br>15-21 – Severe Anxiety Symptoms",
-  "Multidimensional Anxiety Questionnaire (MAQ)" = "40-67 – Not Anxious <br>68-72 –  Mild or subclinical anxiety<br>73-80 – Moderate Anxiety<br>81+ = Severe Anxiety"
+  "Multidimensional Anxiety Questionnaire (MAQ)" = "40-67 – Not Anxious <br>68-72 –  Mild or subclinical anxiety<br>73-80 – Moderate Anxiety<br>81+ = Severe Anxiety",
+  "Screen for Child Anxiety Related Disorders (SCARED)" = "<25 – Normal<br>25+ – Elevated",
+  "Multidimensional Anxiety Scale for Children (MASC)" = "<40 – Low<br>40-45 – Average<br>55-59 – High Average<br>60-64 – Slightly Elevated<br>65-69 – Elevated<br>70+ – Very Elevated",
+  "Revised Children’s Manifest Anxiety Scale (RCMAS)" = "0-9 – Normal or No Anxiety<br>10-18 – Mild to Moderate Anxiety<br>19-29 – Moderate to Severe Anxiety<br>30-63 – Severe Anxiety",
+  #behavior 
+  "Children’s Behavior Checklist (CBCL)" = "65-69 – Borderline Elevated<br>70+ – Clinically Elevated",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory" = "≤55 – Average<br>55-59 – Mildly Elevated<br>60-69 – Moderately Elevated<br>70+ – Extremely Elevated",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory" = "≤55 – Average<br>55-59 – Mildly Elevated<br>60-69 – Moderately Elevated<br>70+ – Extremely Elevated"
 )
 
 #Modifier output handeling 
@@ -334,6 +365,20 @@ score_interpretations <- list(
       "10-14" = "Moderate Depressive Symptoms",
       "15-19" = "Moderately Severe Depressive Symptoms",
       "20-27" = "Severe Depressive Symptoms"
+    ),
+    "Children’s Depression Inventory (CDI)" = list(
+      "0-39" = "Low",
+      "40-59" = "Average",
+      "60-64" = "High Average",
+      "65-69" = "Elevated",
+      "70-100" = "Very Elevated"
+    ),
+    "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)" = list(
+      "0-39" = "Low",
+      "40-59" = "Average",
+      "60-64" = "High Average",
+      "65-69" = "Elevated",
+      "70-100" = "Very Elevated"
     )
   ),
   Anxiety = list(
@@ -354,6 +399,43 @@ score_interpretations <- list(
       "68-72" = "Mild or subclinical anxiety",
       "73-80" = "Moderate Anxiety",
       "81-150" = "Severe Anxiety" #150 is an arbitrary maximum value 
+    ),
+  "Screen for Child Anxiety Related Disorders (SCARED)" = list(
+    "0-24" = "Normal",
+    "25-100" = "Elevated"
+    ),
+  "Multidimensional Anxiety Scale for Children (MASC)" = list(
+    "0-39" = "Low",
+    "40-45" = "Average",
+    "55-59" = "High Average",
+    "60-64" = "Slightly Elevated",
+    "65-69" = "Elevated",
+    "70-100" = "Very Elevated"
+    ),
+  "Revised Children’s Manifest Anxiety Scale (RCMAS)" = list(
+    "0-9" = "Normal or No Anxiety",
+    "10-18" = "Mild to Moderate Anxiety",
+    "19-29" = "Moderate to Severe Anxiety",
+    "30-63" = "Severe Anxiety"
+    )
+  ),
+  Behavior = list(
+    "Children’s Behavior Checklist (CBCL)" = list(
+      "0-64" = "Normal",
+      "65-69" = "Borderline Elevated",
+      "70-100" = "Clinically Elevated"
+    ),
+    "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory" = list(
+      "0-55" = "Average",
+      "55-59" = "Mildly Elevated",
+      "60-69" = "Moderately Elevated",
+      "70-100" = "Extremely Elevated"
+    ),
+    "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory" = list(
+      "0-55" = "Average",
+      "55-59" = "Mildly Elevated",
+      "60-69" = "Moderately Elevated",
+      "70-100" = "Extremely Elevated"
     )
   )
 )
@@ -390,6 +472,20 @@ shinyServer(function(input, output, session) { #####
   })
   
   #calculator####
+  
+  # #Terms of use
+  observeEvent(input$terms_of_use_info, {
+    showModal(modalDialog(
+      title = "View the complete Terms of Use",
+      size = "l", # Set the size of the modal to large
+      tags$iframe(style="height:700px; width:100%; border:none;",
+                  src="Terms_of_Use.pdf"),
+      easyClose = TRUE
+    ))
+  })
+  
+  
+  
   # Create a list of tests to dynamically generate UI and observers
   
   #category to domain dictionary 
@@ -627,6 +723,10 @@ shinyServer(function(input, output, session) { #####
      toggle("anxiety_content")
    })
    
+   observeEvent(input$behavior_btn, {
+     toggle("behavior_content")
+   })
+   
 
    #generat measureUi with observer function to check for checkbox changes 
    generatemeasureUIMood <- function(test_name, value_inputId) {
@@ -795,6 +895,7 @@ shinyServer(function(input, output, session) { #####
      #hide the modifiers 
      toggle("depression_content")
      toggle("anxiety_content")
+     toggle("behavior_content")
      
      # Toggle the visibility of the 'more content' div
      toggle("output_content")
@@ -957,6 +1058,15 @@ shinyServer(function(input, output, session) { #####
     })
   })
   
+  output$behavior_content_ui_MG <- renderUI({
+    lapply(seq_along(mood_tests[["Behavior"]]), function(index) {
+      test_name <- mood_tests[["Behavior"]][index]
+      sanitized_name <- sanitizeTestName_MG(test_name)
+      is_preselected <- included_tests[[sanitized_name]]
+      generatemeasureUIMood_MG(test_name, is_preselected)
+    })
+  })
+  
   output$filters_content_ui_MG <- renderUI({
     lapply(seq_along(filter_tests[["Filters"]]), function(index){
       filter_name <- filter_tests[["Filters"]][index]
@@ -1012,18 +1122,16 @@ shinyServer(function(input, output, session) { #####
   observeEvent(input$anxiety_btn_MG, {
     shinyjs::toggle(id = "anxiety_content_MG")
   })
+  observeEvent(input$behavior_btn_MG, {
+    print("do something")
+    shinyjs::toggle(id = "behavior_content_MG")
+  })
   observeEvent(input$filters_btn_MG,{
     shinyjs::toggle(id ="filters_content_MG")
   })
 
-  
   #Create Output single #####
-   
-  observeEvent(input$output_button, {
-    # Toggle the visibility of the 'more content' div
-    toggle("output_content")
-  })
-  
+
 
   # Create a function to process each test and determine if it's impaired
   is_impaired <- function(test_name, sd_threshold) {
@@ -1234,8 +1342,12 @@ shinyServer(function(input, output, session) { #####
       
       # Depression modifier
       output_content <- paste(output_content, '<li>', "Depression: ", sep="\n")
-      
-      depression_check <-input[["Beck_Depression_Inventory_(BDI-2)_checkbox"]] |         input[["Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)_checkbox"]] |         input[["Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)_checkbox"]]
+
+      depression_check <-input[["Beck_Depression_Inventory_(BDI-2)_checkbox"]] |         
+        input[["Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)_checkbox"]] |        
+        input[["Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)_checkbox"]] |
+        input[["Children’s_Depression_Inventory_(CDI)_checkbox"]] |
+        input[["Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)_checkbox"]]
       # Check if any checkbox is checked for depression, depression tab was openend and at least one box is checked 
       if (!identical(depression_check,logical(0))) {
         
@@ -1250,6 +1362,16 @@ shinyServer(function(input, output, session) { #####
           # # Check if checkbox is checked for PHQ-9
           score <- input[["Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)_value"]]
           output_content <- paste(output_content, generate_modifier_output("Depression", "Patient Health Questionnaire Depression Scale (PHQ-9)", score), "</li>", sep="\n")
+          # Children's Depression Inventory (CDI)
+        } else if (input[["Children’s_Depression_Inventory_(CDI)_checkbox"]]) {
+          score <- input[["Children’s_Depression_Inventory_(CDI)_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Depression", "Children’s Depression Inventory (CDI)", score), "</li>", sep="\n")
+          
+        # Children's Depression Inventory – Second Edition: Self-Report (CDI-2: SR)
+        } else if (input[["Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)_checkbox"]]) {
+         score <- input[["Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)_value"]]
+         output_content <- paste(output_content, generate_modifier_output("Depression", "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)", score), "</li>", sep="\n")
+          
         } else {
         output_content <- paste(output_content, "No test selected", "</li>", sep="\n")
         }
@@ -1260,23 +1382,83 @@ shinyServer(function(input, output, session) { #####
       # Anxiety modifier
       output_content <- paste(output_content, '<li>', "Anxiety: ", sep="\n")
       
-      anxiety_check <-input[["Beck_Anxiety_Inventory_(BAI)_checkbox"]] | input[["Generalized_Anxiety_Disorder_(GAD-7)_checkbox"]] | input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_checkbox"]]
-      # Check if any checkbox is checked for anxiety, axiety tab was openend and at least one box is checked 
-      if (!identical(anxiety_check,logical(0))) {
+      anxiety_check <- input[["Beck_Anxiety_Inventory_(BAI)_checkbox"]] | 
+        input[["Generalized_Anxiety_Disorder_(GAD-7)_checkbox"]] | 
+        input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_checkbox"]] |
+        input[["Screen_for_Child_Anxiety_Related_Disorders_(SCARED)_checkbox"]] |
+        input[["Multidimensional_Anxiety_Scale_for_Children_(MASC)_checkbox"]] |
+        input[["Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)_checkbox"]]
+
+      # Check if any checkbox is checked for anxiety
+      if (!identical(anxiety_check, logical(0))) {
         
-        # Check if checkbox is checked for BAI
+        # Beck Anxiety Inventory (BAI)
         if (input[["Beck_Anxiety_Inventory_(BAI)_checkbox"]]) {
           score <- input[["Beck_Anxiety_Inventory_(BAI)_value"]]
           output_content <- paste(output_content, generate_modifier_output("Anxiety", "Beck Anxiety Inventory (BAI)", score), "</li>", sep="\n")
-        } else if  (input[["Generalized_Anxiety_Disorder_(GAD-7)_checkbox"]]) {
+          
+          # Generalized Anxiety Disorder (GAD-7)
+        } else if (input[["Generalized_Anxiety_Disorder_(GAD-7)_checkbox"]]) {
           score <- input[["Generalized_Anxiety_Disorder_(GAD-7)_value"]]
           output_content <- paste(output_content, generate_modifier_output("Anxiety", "Generalized Anxiety Disorder (GAD-7)", score), "</li>", sep="\n")
-        }else if  (input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_checkbox"]]) {
+          
+          # Multidimensional Anxiety Questionnaire (MAQ)
+        } else if (input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_checkbox"]]) {
           score <- input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_value"]]
           output_content <- paste(output_content, generate_modifier_output("Anxiety", "Multidimensional Anxiety Questionnaire (MAQ)", score), "</li>", sep="\n")
-        }else {
-        output_content <- paste(output_content, "Anxiety:", "No test selected.", "</li>", sep="\n")
+          
+          # Screen for Child Anxiety Related Disorders (SCARED)
+        } else if (input[["Screen_for_Child_Anxiety_Related_Disorders_(SCARED)_checkbox"]]) {
+          score <- input[["Screen_for_Child_Anxiety_Related_Disorders_(SCARED)_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Screen for Child Anxiety Related Disorders (SCARED)", score), "</li>", sep="\n")
+          
+          # Multidimensional Anxiety Scale for Children (MASC)
+        } else if (input[["Multidimensional_Anxiety_Scale_for_Children_(MASC)_checkbox"]]) {
+          score <- input[["Multidimensional_Anxiety_Scale_for_Children_(MASC)_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Multidimensional Anxiety Scale for Children (MASC)", score), "</li>", sep="\n")
+          
+          # Revised Children’s Manifest Anxiety Scale (RCMAS)
+        } else if (input[["Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)_checkbox"]]) {
+          score <- input[["Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Revised Children’s Manifest Anxiety Scale (RCMAS)", score), "</li>", sep="\n")
+          
+        } else {
+          output_content <- paste(output_content, "Anxiety:", "No test selected.", "</li>", sep="\n")
         }
+        
+      } else {
+        output_content <- paste(output_content, "No test selected.", "</li>", sep="\n")
+      }
+      
+      # Behavior modifier
+      output_content <- paste(output_content, '<li>', "Behavior: ", sep="\n")
+      
+      behavior_check <- input[["Children’s_Behavior_Checklist_(CBCL)_checkbox"]] | 
+        input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory_checkbox"]] | 
+        input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory_checkbox"]]
+      
+      # Check if any checkbox is checked for behavior
+      if (!identical(behavior_check, logical(0))) {
+        
+        # Children's Behavior Checklist (CBCL) - Total Problems
+        if (input[["Children’s_Behavior_Checklist_(CBCL)_checkbox"]]) {
+          score <- input[["Children’s_Behavior_Checklist_(CBCL)_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Behavior", "Children’s Behavior Checklist (CBCL)", score), "</li>", sep="\n")
+          
+          # Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory
+        } else if (input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory_checkbox"]]) {
+          score <- input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Behavior", "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory", score), "</li>", sep="\n")
+          
+          # Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory
+        } else if (input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory_checkbox"]]) {
+          score <- input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory_value"]]
+          output_content <- paste(output_content, generate_modifier_output("Behavior", "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory", score), "</li>", sep="\n")
+          
+        } else {
+          output_content <- paste(output_content, "Behavior:", "No test selected.", "</li>", sep="\n")
+        }
+        
       } else {
         output_content <- paste(output_content, "No test selected.", "</li>", sep="\n")
       }
@@ -1333,8 +1515,12 @@ shinyServer(function(input, output, session) { #####
       }
       # Return the HTML content
       #HTML(output_content[1])
+      
+      print("output content is generated")
         
       output_html(output_content[1])
+      
+      print(paste("Final output_html content:", output_html()))
       # 
       # 
       # # Return the HTML content
@@ -1347,7 +1533,14 @@ shinyServer(function(input, output, session) { #####
   #  })
   })
   
+  #ensure initally hidden content is displayed 
+  observeEvent(input$output_button, {
+    shinyjs::show("output_content")
+  })
+  
+  
   output$results <- renderUI({
+    print("some results are also generated")
     HTML(output_html())
   })
   
@@ -1428,7 +1621,7 @@ shinyServer(function(input, output, session) { #####
         domain_sel <- get_domain_for_test(ori_test_names[i])
         
         #remove sclaes from mood tests
-        if(any(c(names(score_interpretations$Depression), names(score_interpretations$Anxiety)) %in% test_names_selected[i])){
+        if(any(c(names(score_interpretations$Depression), names(score_interpretations$Anxiety), names(score_interpretations$Behavior)) %in% test_names_selected[i])){
           
           table_col <- paste(domain_sel, ":", test_names_selected[i])
         }else{
@@ -1778,7 +1971,8 @@ shinyServer(function(input, output, session) { #####
                 round(`Attention/Processing Speed Domain_imp_percent`), "% Attention/Processing Speed Domain\n",
                 round(`Visuospatial Domain_imp_percent`), "% Visuospatial Domain"
               )
-            )
+            ) %>% 
+            mutate(text_info = ifelse(Phenotype %in% c("Single Domain","Bi-domain"),text_info,""))
           
           # Create the pie chart
           plot_ly(

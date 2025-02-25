@@ -119,9 +119,26 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                     }")),
                      
                      div(class = "disbox",
-                       box(title = h2("Legal disclaimer placeholder", align = "center"),
-                           width = 12), 
+                         box(
+                           title = NULL,  # Remove default box title
+                           style = "margin-top: -30px;",  # Keeps border, removes shadow
+                           h2(strong("Terms of Use"), style = "text-align: justify;margin-top: 0px;"),
+                           p("These Terms of Use (the 'Terms') govern your access to and use of websites, applications, and services (the 'Services') that are provided by The Cleveland Clinic Foundation ('Cleveland Clinic' or 'us' or 'we') and linked to these Terms. IF YOU DO NOT AGREE TO THESE TERMS, YOU MAY NOT USE THE SERVICES.", 
+                             style = "text-align: justify; font-size: 16px; color: #333;"),
+                           div(
+                             style = "text-align: center; margin-top: 10px;",
+                             actionButton(
+                               inputId = "terms_of_use_info",
+                               label = "View the Complete Terms of Use",
+                               icon = icon("info"),
+                               class = "btn",
+                               style = "padding: 10px 20px; font-size: 14px; font-weight: bold; background-color: #6a1b9a; color: white; border: none;"
+                             )
+                           ),
+                           width = 12
+                         )
                      ),
+                     
                      column(12, 
                             h2(strong("Directions")),
                             h4("Please answer the series of questions below to customize the IC-CoDE calculator in the way that best suits your research. You have the option to select how many tests you would like to use in each cognitive domain to generate cognitive phenotypes; however, you must have a minimum of at least 2 tests per cognitive domain for the calculator to generate IC-CoDE phenotypes. It is recommended that you include tests of different types within each cognitive domain whenever possible (e.g., naming and fluency tasks rather than two fluency tasks).", style = "line-height: 1.8; margin-bottom: 40px;"),
@@ -292,6 +309,9 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                              br(),
                                              actionLink(inputId = "anxiety_btn", label = "Anxiety (+)", class = "custom-action-link", onclick = "toggleContent('anxiety_content')"),
                                              div(id = "anxiety_content", style = "display: none;", uiOutput("anxiety_content_ui")),
+                                             br(),
+                                             actionLink(inputId = "behavior_btn", label = "Behavior (+)", class = "custom-action-link", onclick = "toggleContent('behavior_content')"),
+                                             div(id = "behavior_content", style = "display: none;", uiOutput("behavior_content_ui")),
                                       ),
 
 
@@ -444,104 +464,116 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                             multiple = FALSE,
                                             width = "100%" ),
                                 br(),
-                                h3("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score)."),
-                                h3(tags$b("Note:"),"Once you've filled in the Excel template, you can upload it directly using the form below, no further specifications below are needed."),
-                                
-                                #Group UI 
-                                div(class = "custom-text-box", "LANGUAGE"),
-                                uiOutput("language_warning_ui_MG"),
-                                
-                                column(12,
-                                       actionLink(inputId = "naming_btn_MG", label = "Naming (+)", class = "custom-action-link", onclick = "toggleContent('naming_content_MG')"),
-                                       div(id = "naming_content_MG", style = "display: none;", uiOutput("naming_content_ui_MG")),
-                                       br(),
-                                       actionLink(inputId = "fluency_btn_MG", label = "Fluency (+)", class = "custom-action-link", onclick = "toggleContent('fluency_content_MG')"),
-                                       div(id = "fluency_content_MG", style = "display: none;", uiOutput("fluency_content_ui_MG"))
-                                ),
-                                
-                                br(),
-                                div(class = "custom-text-box", "MEMORY"),
-                                uiOutput("memory_warning_ui_MG"),
-                                
-                                column(12,
-                                       actionLink(inputId = "word_list_delayed_recall_btn_MG", label = "Word List Delayed Recall (+)", class = "custom-action-link"),
-                                       hidden(div(id = "word_list_delayed_recall_content_MG", uiOutput("word_list_delayed_recall_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "sp_delay_recall_btn_MG", label = "Story/Prose Delayed Recall (+)", class = "custom-action-link"),
-                                       hidden(div(id = "story_prose_delayed_recall_content_MG", uiOutput("story_prose_delayed_recall_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "wp_delay_recall_btn_MG", label = "Word Pair Delayed Recall (+)", class = "custom-action-link"),
-                                       hidden(div(id = "word_pair_delayed_recall_content_MG", uiOutput("word_pair_delayed_recall_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "d_delay_recall_btn_MG", label = "Design Delayed Recall (+)", class = "custom-action-link"),
-                                       hidden(div(id = "design_delayed_recall_content_MG", uiOutput("design_delayed_recall_content_ui_MG")))
-                                ),
-                                
-                                br(),
-                                div(class = "custom-text-box", "EXECUTIVE FUNCTION"),
-                                uiOutput("executive_function_warning_ui_MG"),
-                                
-                                column(12,
-                                       actionLink(inputId = "ss_btn_MG", label = "Set-Shifting (+)", class = "custom-action-link"),
-                                       hidden(div(id = "set-shifting_content_MG", uiOutput("set-shifting_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "ps_btn_MG", label = "Problem-Solving (+)", class = "custom-action-link"),
-                                       hidden(div(id = "problem-solving_content_MG", uiOutput("problem-solving_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "ri_btn_MG", label = "Response Inhibition (+)", class = "custom-action-link"),
-                                       hidden(div(id = "response_inhibition_content_MG", uiOutput("response_inhibition_content_ui_MG")))
-                                ),
-                                
-                                br(),
-                                div(class = "custom-text-box", "ATTENTION / PROCESSING SPEED"),
-                                uiOutput("attention_processing_speed_warning_ui_MG"),
-                                
-                                column(12,
-                                       actionLink(inputId = "a_btn_MG", label = "Attention / Working Memory (+)", class = "custom-action-link"),
-                                       hidden(div(id = "attention___working_memory_content_MG", uiOutput("attention___working_memory_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "pro_s_btn_MG", label = "Processing Speed (+)", class = "custom-action-link"),
-                                       hidden(div(id = "processing_speed_content_MG", uiOutput("processing_speed_content_ui_MG")))
-                                ),
-                                
-                                br(),
-                                div(class = "custom-text-box", "VISUOSPATIAL"),
-                                uiOutput("visuospatial_warning_ui_MG"),
-                                
-                                column(12,
-                                       actionLink(inputId = "vc_btn_MG", label = "Visuoconstruction (+)", class = "custom-action-link"),
-                                       hidden(div(id = "visuoconstruction_content_MG", uiOutput("visuoconstruction_content_ui_MG"))),
-                                       br(),
-                                       actionLink(inputId = "vp_btn_MG", label = "Visuoperception (+)", class = "custom-action-link"),
-                                       hidden(div(id = "visuoperception_content_MG", uiOutput("visuoperception_content_ui_MG")))
-                                ),
-                                
-                                div(class = "custom-text-box", "Mood Symptoms"),
-                                uiOutput("mood_symptoms_warning_ui_MG"),
-                                
-                                column(12,
-                                       actionLink(inputId = "depression_btn_MG", label = "Depression (+)", class = "custom-action-link", onclick = "toggleContent('depression_content_MG')"),
-                                       div(id = "depression_content_MG", style = "display: none;", uiOutput("depression_content_ui_MG")),
-                                       br(),
-                                       actionLink(inputId = "anxiety_btn_MG", label = "Anxiety (+)", class = "custom-action-link", onclick = "toggleContent('anxiety_content_MG')"),
-                                       div(id = "anxiety_content_MG", style = "display: none;", uiOutput("anxiety_content_ui_MG"))
-                                ),
-                                
-                                div(class = "custom-text-box", "Filter options"),
-                                
-                                column(12,
-                                       actionLink(inputId ="filters_btn_MG", label ="Filters (+)",class="custom-action-link", onclick ="toggleContent('filters_content_MG')"),
-                                       div(id ="filters_content_MG", style ="display: none;", uiOutput("filters_content_ui_MG"))),
                                 
                                 
-                                column(8, align = "left",         
-                                       div(style = "margin-top: 40px; margin-bottom: 20px;",
-                                           #hidden(div(id = "output_content", uiOutput("results"))),
-                                           h4("Download excel table template"),
-                                           downloadButton("download_table", "Download group table template"),
-                                       )
-                                ),
-                                column(12),
+                                h3("Please select an option below: generate a data entry template or upload your completed table to process and generate results"),
+                                tabsetPanel(
+                                  ##create template ####
+                                  tabPanel("Create Template",
+                                    h4("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score)."),
+                                    h4(tags$b("Note:"),"Once you've filled in the Excel template, you can upload it directly using the form below, no further specifications below are needed."),
+                                    
+                                    #Group UI 
+                                    div(class = "custom-text-box", "LANGUAGE"),
+                                    uiOutput("language_warning_ui_MG"),
+                                    
+                                    column(12,
+                                           actionLink(inputId = "naming_btn_MG", label = "Naming (+)", class = "custom-action-link", onclick = "toggleContent('naming_content_MG')"),
+                                           div(id = "naming_content_MG", style = "display: none;", uiOutput("naming_content_ui_MG")),
+                                           br(),
+                                           actionLink(inputId = "fluency_btn_MG", label = "Fluency (+)", class = "custom-action-link", onclick = "toggleContent('fluency_content_MG')"),
+                                           div(id = "fluency_content_MG", style = "display: none;", uiOutput("fluency_content_ui_MG"))
+                                    ),
+                                    
+                                    br(),
+                                    div(class = "custom-text-box", "MEMORY"),
+                                    uiOutput("memory_warning_ui_MG"),
+                                    
+                                    column(12,
+                                           actionLink(inputId = "word_list_delayed_recall_btn_MG", label = "Word List Delayed Recall (+)", class = "custom-action-link"),
+                                           hidden(div(id = "word_list_delayed_recall_content_MG", uiOutput("word_list_delayed_recall_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "sp_delay_recall_btn_MG", label = "Story/Prose Delayed Recall (+)", class = "custom-action-link"),
+                                           hidden(div(id = "story_prose_delayed_recall_content_MG", uiOutput("story_prose_delayed_recall_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "wp_delay_recall_btn_MG", label = "Word Pair Delayed Recall (+)", class = "custom-action-link"),
+                                           hidden(div(id = "word_pair_delayed_recall_content_MG", uiOutput("word_pair_delayed_recall_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "d_delay_recall_btn_MG", label = "Design Delayed Recall (+)", class = "custom-action-link"),
+                                           hidden(div(id = "design_delayed_recall_content_MG", uiOutput("design_delayed_recall_content_ui_MG")))
+                                    ),
+                                    
+                                    br(),
+                                    div(class = "custom-text-box", "EXECUTIVE FUNCTION"),
+                                    uiOutput("executive_function_warning_ui_MG"),
+                                    
+                                    column(12,
+                                           actionLink(inputId = "ss_btn_MG", label = "Set-Shifting (+)", class = "custom-action-link"),
+                                           hidden(div(id = "set-shifting_content_MG", uiOutput("set-shifting_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "ps_btn_MG", label = "Problem-Solving (+)", class = "custom-action-link"),
+                                           hidden(div(id = "problem-solving_content_MG", uiOutput("problem-solving_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "ri_btn_MG", label = "Response Inhibition (+)", class = "custom-action-link"),
+                                           hidden(div(id = "response_inhibition_content_MG", uiOutput("response_inhibition_content_ui_MG")))
+                                    ),
+                                    
+                                    br(),
+                                    div(class = "custom-text-box", "ATTENTION / PROCESSING SPEED"),
+                                    uiOutput("attention_processing_speed_warning_ui_MG"),
+                                    
+                                    column(12,
+                                           actionLink(inputId = "a_btn_MG", label = "Attention / Working Memory (+)", class = "custom-action-link"),
+                                           hidden(div(id = "attention___working_memory_content_MG", uiOutput("attention___working_memory_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "pro_s_btn_MG", label = "Processing Speed (+)", class = "custom-action-link"),
+                                           hidden(div(id = "processing_speed_content_MG", uiOutput("processing_speed_content_ui_MG")))
+                                    ),
+                                    
+                                    br(),
+                                    div(class = "custom-text-box", "VISUOSPATIAL"),
+                                    uiOutput("visuospatial_warning_ui_MG"),
+                                    
+                                    column(12,
+                                           actionLink(inputId = "vc_btn_MG", label = "Visuoconstruction (+)", class = "custom-action-link"),
+                                           hidden(div(id = "visuoconstruction_content_MG", uiOutput("visuoconstruction_content_ui_MG"))),
+                                           br(),
+                                           actionLink(inputId = "vp_btn_MG", label = "Visuoperception (+)", class = "custom-action-link"),
+                                           hidden(div(id = "visuoperception_content_MG", uiOutput("visuoperception_content_ui_MG")))
+                                    ),
+                                    
+                                    div(class = "custom-text-box", "Mood Symptoms"),
+                                    uiOutput("mood_symptoms_warning_ui_MG"),
+                                    
+                                    column(12,
+                                           actionLink(inputId = "depression_btn_MG", label = "Depression (+)", class = "custom-action-link", onclick = "toggleContent('depression_content_MG')"),
+                                           div(id = "depression_content_MG", style = "display: none;", uiOutput("depression_content_ui_MG")),
+                                           br(),
+                                           actionLink(inputId = "anxiety_btn_MG", label = "Anxiety (+)", class = "custom-action-link", onclick = "toggleContent('anxiety_content_MG')"),
+                                           div(id = "anxiety_content_MG", style = "display: none;", uiOutput("anxiety_content_ui_MG")),
+                                           br(),
+                                           actionLink(inputId = "behavior_btn_MG", label = "Behavior (+)", class = "custom-action-link", onclick = "toggleContent('behavior_content_MG')"),
+                                           div(id = "behavior_content_MG", style = "display: none;", uiOutput("behavior_content_ui_MG"))
+                                    ),
+                                    
+                                    div(class = "custom-text-box", "Filter options"),
+                                    
+                                    column(12,
+                                           actionLink(inputId ="filters_btn_MG", label ="Filters (+)",class="custom-action-link", onclick ="toggleContent('filters_content_MG')"),
+                                           div(id ="filters_content_MG", style ="display: none;", uiOutput("filters_content_ui_MG"))),
+                                    
+                                    
+                                    column(8, align = "left",         
+                                           div(style = "margin-top: 40px; margin-bottom: 20px;",
+                                               #hidden(div(id = "output_content", uiOutput("results"))),
+                                               h4("Download excel table template"),
+                                               downloadButton("download_table", "Download group table template"),
+                                           )
+                                    ),
+                                    column(12),
+                                  ),
+                                  tabPanel("Upload data and generate results",
+                                
                                 
                                 column(8, align = "left",         
                                        div(style = "margin-top: 0px; margin-bottom: 40px; width:100%;",
@@ -564,6 +596,9 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                 
                                 column(12,
                                        uiOutput("file_upload_status"))
+                                  ),
+                                )#close group split panel
+
 
                              )#close tab panle group 
                          )
@@ -593,6 +628,13 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                              box(width = 12,
                                  title = h2("Epilepsy", align = "center"),
                                  timelineBlock(reversed = FALSE, width = 12,
+                                               timelineLabel(2024, color = "teal"),
+                                               timelineItem(title = "Cortical Thickness Patterns of CognitiveImpairment Phenotypes in Drug-ResistantTemporal Lobe Epilepsy",
+                                                            border = FALSE,
+                                                            #icon = icon("user"),
+                                                            #color = "yellow",
+                                                            time = shiny::a("Miron et al.", href="https://onlinelibrary.wiley.com/doi/epdf/10.1002/ana.26893", target = '_blank'),
+                                               ),
                                                timelineLabel(2024, color = "teal"),
                                                timelineItem(title = "European cross-cultural neuropsychological test battery (CNTB) for the assessment of cognitive impairment in multiple sclerosis: Cognitive phenotyping and classification supported by machine learning techniques",
                                                             border = FALSE,
