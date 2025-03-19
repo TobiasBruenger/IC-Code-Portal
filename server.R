@@ -1123,7 +1123,6 @@ shinyServer(function(input, output, session) { #####
     shinyjs::toggle(id = "anxiety_content_MG")
   })
   observeEvent(input$behavior_btn_MG, {
-    print("do something")
     shinyjs::toggle(id = "behavior_content_MG")
   })
   observeEvent(input$filters_btn_MG,{
@@ -1264,8 +1263,10 @@ shinyServer(function(input, output, session) { #####
           # Identify domains for the test names
           category_names <- find_categories_for_names(impairment_flags, lapply(all_tests, sanitizeTestName))
           identified_domains <- unlist(identify_domains(category_names, domains))
+          #considers only domains as impaired withmore 2o more test impaied 
+          identified_domain_filt <- names(table(identified_domains))[which(table(identified_domains)>=2)]
           
-          impaired_domains_int <- unique(identified_domains)#domain_names[impairment_flags]
+          impaired_domains_int <- unique(identified_domain_filt)
           impaired_domains <- paste(impaired_domains_int, collapse = ", ")
         } else {
           impaired_tot <- FALSE
@@ -1276,10 +1277,10 @@ shinyServer(function(input, output, session) { #####
         
         output1 <- paste0("Cutoff: ", threshold_label, "SD<br>",
                           "Phenotype: ",
-                          case_when(length(unique(identified_domains)) == 0~"No Impaired Domains.",
-                                    length(unique(identified_domains)) == 1~"Single Domain Impairment.",
-                                    length(unique(identified_domains)) == 2~"Bi-domain Impairment.",
-                                    length(unique(identified_domains)) > 2~"Generalized Impairment."),"</b> <br>")
+                          case_when(length(unique(identified_domain_filt)) == 0~"No Impaired Domains.",
+                                    length(unique(identified_domain_filt)) == 1~"Single Domain Impairment.",
+                                    length(unique(identified_domain_filt)) == 2~"Bi-domain Impairment.",
+                                    length(unique(identified_domain_filt)) > 2~"Generalized Impairment."),"</b> <br>")
         
         #ensure correct display of domain names 
         impaired_domains <- str_replace(impaired_domains, "ExecutiveFunction","Executive Function") %>% 
@@ -1515,8 +1516,6 @@ shinyServer(function(input, output, session) { #####
       }
       # Return the HTML content
       #HTML(output_content[1])
-      
-      print("output content is generated")
         
       output_html(output_content[1])
       
@@ -1540,7 +1539,6 @@ shinyServer(function(input, output, session) { #####
   
   
   output$results <- renderUI({
-    print("some results are also generated")
     HTML(output_html())
   })
   
