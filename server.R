@@ -17,6 +17,7 @@ library(shinyvalidate)
 library(DT)
 library(webshot)
 library(openxlsx)
+library(shinyalert)
 
 library(bslib)
 
@@ -81,13 +82,12 @@ generatenameUI <- function(test_name) {
   fluidRow( # Adding headers for Measure and Scale
     column(5, h3("Measure", style = "text-align:center; color: purple; font-weight: 600;")),
     column(2, h3("Score", style = "text-align:center; color: purple; font-weight: 600;")), # Center-aligning the header
-    column(3, h3("Scale", style = "text-align:center; color: purple; font-weight: 600;")), # Center-aligning the header
-    column(1, h3("Include", style = "text-align:center; color: purple; font-weight: 600;"))
+    column(3, h3("Scale", style = "text-align:center; color: purple; font-weight: 600;")) # Center-aligning the header
   )
 }
 
 
-generatemeasureUI <- function(test_name, value_inputId, scale_inputId, scaleSelected,  checkbox_inputId, selected_value) {
+generatemeasureUI <- function(test_name, value_inputId, scale_inputId, scaleSelected) {
   if (!str_detect(test_name,"Other")) {
     fluidRow(
       column(5, textInput(inputId = paste0(value_inputId, "_name"), label = NULL, value = test_name, placeholder = "Enter test name", width = "100%")),
@@ -99,11 +99,10 @@ generatemeasureUI <- function(test_name, value_inputId, scale_inputId, scaleSele
                                         "Z-score (M=0, SD=1)",
                                         "Percentile Score (%tile)"),
                             selected = scaleSelected, width = "100%")),
-      column(1, checkboxInput(inputId = checkbox_inputId, label = NULL, value = selected_value)),
       #column(1, "test")
       column(1, div(id = paste0(sanitizeTestName(test_name), "_warning_message_sd"), class = "warning-message", style = "position: relative;",
                     tippy(icon("exclamation-triangle", class = "fa-2x", style = "color: red; cursor: pointer;"),
-                          tooltip = h4("Value differs by more than 2SD"), 
+                          tooltip = h4("Value differs by more than 2SD. Please ensure score and scale are correctly entered."), 
                           animation = "scale", 
                           theme = "light")
        )
@@ -121,11 +120,10 @@ generatemeasureUI <- function(test_name, value_inputId, scale_inputId, scaleSele
                                         "Z-score (M=0, SD=1)",
                                         "Percentile Score (%tile)"),
                             selected = scaleSelected, width = "100%")),
-      column(1, checkboxInput(inputId = checkbox_inputId, label = NULL, value = selected_value)),
       #column(1, "test")
       column(1, div(id = paste0(sanitizeTestName(test_name), "_warning_message_sd"), class = "warning-message", style = "position: relative;",
                     tippy(icon("exclamation-triangle", class = "fa-2x", style = "color: red; cursor: pointer;"),
-                          tooltip = h4("Value differs by more than 2SD"),
+                          tooltip = h4("Value differs by more than 2 SD. Please ensure score and scale are correctly entered."),
                           animation = "scale",
                           theme = "light")
       )
@@ -446,13 +444,13 @@ score_interpretations <- list(
 generatenameUIMood <- function(test_name) {
   fluidRow(
     column(3, offset = 1, h3("Measure", style = "text-align:center; color: purple; font-weight: 600;")),
-    column(3, h3("Score", style = "text-align:center; color: purple; font-weight: 600;")), 
-    column(1, offset = 1, h3("Inlcude", style = "text-align:center; color: purple; font-weight: 600;")) 
-  )
+    column(3, h3("Score", style = "text-align:center; color: purple; font-weight: 600;"))
+  ) 
+
 }
 
 
-shinyServer(function(input, output, session) { #####
+shinyServer(function(input, output, session) { ##### SERVER #####
   observe({
     shinyalert(
       title ="Cookies Policy",
@@ -470,6 +468,20 @@ shinyServer(function(input, output, session) { #####
   observeEvent(input$getStartedButton, {
     updateTabsetPanel(session, "TabDisplay", selected = "calculatortab")
   })
+  
+  # Privcay policy link
+  observeEvent(list(input$privacy_link_about, input$privacy_link), {
+    showModal(modalDialog(
+      title = "Privacy Policy",
+      size = "l",
+      easyClose = TRUE,
+      footer = modalButton("Close"),
+      tags$iframe(
+        src   = "Privacy Policy - IC - CoDE Portal.pdf",
+        style = "width: 100%; height: 75vh; border: none;"
+      )
+    ))
+  }, ignoreInit = TRUE)
   
   #calculator####
   
@@ -537,12 +549,9 @@ shinyServer(function(input, output, session) { #####
       count <- 0
       for (test_name in test_names) {
         sanitized_name <- sanitizeTestName(test_name)
-        checkbox_inputId <- paste0(sanitized_name, "_checkbox")
-        value_inputId <- paste0(sanitized_name, "_value")
-        # Check if the checkbox is checked and value is valid
-        if (category_to_domain[[test_to_category(test_name)]] == domain &&
-            !is.null(input[[checkbox_inputId]]) && input[[checkbox_inputId]] &&
-            !is.null(input[[value_inputId]]) && !is.na(input[[value_inputId]])) {
+        value_inputId  <- paste0(sanitized_name, "_value")
+        if ( category_to_domain[[ test_to_category(test_name) ]] == domain &&
+             !is.null(input[[value_inputId]]) && !is.na(input[[value_inputId]]) ) {
           count <- count + 1
         }
       }
@@ -600,7 +609,7 @@ shinyServer(function(input, output, session) { #####
       generatenameUI(category_name),
       lapply(seq_along(test_names), function(i) {
         sanitized_name <- sanitizeTestName(test_names[i])
-        generatemeasureUI(sanitized_name, paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$cutoffSelection, paste0(sanitized_name, "_checkbox"), selected_values[i])
+        generatemeasureUI(sanitized_name, paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$cutoffSelection)
       })
     )
   }
@@ -646,7 +655,7 @@ shinyServer(function(input, output, session) { #####
              lapply(1:length(test_names), function(i) {
                sanitized_name <- sanitizeTestName(test_names[i])
                cat("Input scaleSelection:", input$scaleSelection, "\n", test_names[i],sanitized_name,"\n")
-               generatemeasureUI(test_names[i], paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$scaleSelection, paste0(sanitized_name, "_checkbox"), i == 1)
+               generatemeasureUI(test_names[i], paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$scaleSelection)
              })
            )
          }
@@ -741,8 +750,7 @@ shinyServer(function(input, output, session) { #####
                            tooltip = h4(HTML(interpretation)), 
                            animation = "scale", 
                            theme = "light")
-       )),
-       column(1, checkboxInput(inputId = checkbox_inputId, label = NULL, value = FALSE))
+       ))
      )
      
    }
@@ -770,40 +778,17 @@ shinyServer(function(input, output, session) { #####
    lapply(names(mood_tests), generateMoodCategoryUI)
    
    #Create observers for the mood domain
-   createMoodObservers <- function(test_names, values) {
-     for (test_name in test_names) {
-       local({
-         sanitized_name <- sanitizeTestName(test_name)
-         category_name <- moodtest_to_category[test_name]  # Update to moodtest_to_category
-         value_inputId <- paste0(sanitized_name, "_value")
-         checkbox_inputId <- paste0(sanitized_name, "_checkbox")  # Add checkbox ID
-         
-         # Observe changes in input values for each test
-         observe({
-           values[[value_inputId]] <- input[[value_inputId]]
-         })
-         
-         # Track changes in checkboxes and enforce constraint
-         observeEvent(input[[checkbox_inputId]], {
-           if (input[[checkbox_inputId]]) {
-             # Filter test names based on the category of interest
-             category_tests <- sanitizeTestName(names(moodtest_to_category)[moodtest_to_category == category_name])
-             # Append "_checkbox" to each test name to identify checkboxes
-             category_checkboxes <- paste0(category_tests, "_checkbox")
-             for (cb_id in category_checkboxes) {
-               if (cb_id != checkbox_inputId) {
-                 updateCheckboxInput(session, cb_id, value = FALSE)
-               }
-             }
-           }
-         })
-         
-       })
-     }
-   }
+   lapply(unlist(mood_tests), function(test_name) {
+     sanitized <- sanitizeTestName(test_name)
+     value_id  <- paste0(sanitized, "_value")
+     observe({
+       # as soon as the user types a number, store it in values[[value_id]]
+       values[[value_id]] <- input[[value_id]]
+     })
+   })
    
    
-   createMoodObservers(unlist(mood_tests), values)
+   # createMoodObservers(unlist(mood_tests), values) # not needed without checkboxes 
    
    
    # Define a list of domain names
@@ -903,26 +888,6 @@ shinyServer(function(input, output, session) { #####
      
    })
   
-  generatemeasureUIMood <- function(test_name, value_inputId) {
-    interpretation <- interpretations[[test_name]]  # Get interpretation from dictionary
-    checkbox_inputId <- paste0(sanitizeTestName(test_name), "_checkbox")
-    
-    fluidRow(
-      column(5, textInput(inputId = paste0(value_inputId, "_name"), label = NULL, value = test_name, placeholder = "Enter test name", width = "100%")),
-      column(2, numericInput(inputId = value_inputId, label = NULL, value = NULL, width = "100%")),
-      column(1, div(class = "question-mark",
-                    tippy(icon("question-circle", class = "fa-2x", style = "color: black; cursor: pointer;"),
-                          tooltip = h4(HTML(interpretation)), 
-                          animation = "scale", 
-                          theme = "light")
-      )),
-      column(1, checkboxInput(inputId = checkbox_inputId, label = NULL, value = FALSE))
-    )
-    
-  }
-  
-  
-  
   #create input group #####
   generatemeasureUI_MG <- function(test_name, value_inputId, is_preselected = FALSE) {
     fluidRow(
@@ -970,7 +935,7 @@ shinyServer(function(input, output, session) { #####
         test_name <- test_list[index]
         sanitized_name <- sanitizeTestName_MG(test_name)
         checkbox_id <- paste0(sanitized_name,"_include_MG")# Preselect the first test in each category
-        included_tests[[checkbox_id]]<-(index ==1)
+        included_tests[[checkbox_id]]<- FALSE #(index ==1)
       }
     }
   }
@@ -979,28 +944,29 @@ shinyServer(function(input, output, session) { #####
   initialize_checkboxes()
   
   # Initialize checkbox states for all tests, including mood tests
-  observe({
-    for (category in names(all_tests)) {
-      for (test_name in all_tests[[category]]) {
-        sanitized_name <- sanitizeTestName_MG(test_name)
-        included_tests[[sanitized_name]] <- (test_name == all_tests[[category]][1])  # Preselect first test in each category
-      }
-    }
-    
-    for (mood_category in names(mood_tests)) {
-      for (mood_test in mood_tests[[mood_category]]) {
-        sanitized_name <- sanitizeTestName_MG(mood_test)
-        included_tests[[sanitized_name]] <- (mood_test == mood_tests[[mood_category]][1])  # Preselect first test in each mood category
-      }
-    }
-    
-    for(filter_category in names(filter_tests)){
-      for(filter_test in filter_tests[[filter_category]]){
-        sanitized_name <- sanitizeTestName_MG(filter_test)
-        included_tests[[sanitized_name]]<-(filter_test == filter_tests[[filter_category]][1])# Preselect first filter in each category
-      }
-    }
-  })
+  # Outquoted to have nothing preselected also not the first entry
+  # observe({
+  #   for (category in names(all_tests)) {
+  #     for (test_name in all_tests[[category]]) {
+  #       sanitized_name <- sanitizeTestName_MG(test_name)
+  #       included_tests[[sanitized_name]] <- (test_name == all_tests[[category]][1])  # Preselect first test in each category
+  #     }
+  #   }
+  #   
+  #   for (mood_category in names(mood_tests)) {
+  #     for (mood_test in mood_tests[[mood_category]]) {
+  #       sanitized_name <- sanitizeTestName_MG(mood_test)
+  #       included_tests[[sanitized_name]] <- (mood_test == mood_tests[[mood_category]][1])  # Preselect first test in each mood category
+  #     }
+  #   }
+  #   
+  #   for(filter_category in names(filter_tests)){
+  #     for(filter_test in filter_tests[[filter_category]]){
+  #       sanitized_name <- sanitizeTestName_MG(filter_test)
+  #       included_tests[[sanitized_name]]<-(filter_test == filter_tests[[filter_category]][1])# Preselect first filter in each category
+  #     }
+  #   }
+  # })
   
   # Dynamically render UI for standard 
   lapply(names(all_tests), function(category) {
@@ -1134,24 +1100,18 @@ shinyServer(function(input, output, session) { #####
 
   # Create a function to process each test and determine if it's impaired
   is_impaired <- function(test_name, sd_threshold) {
-    score <- transform_score(values[[paste0(test_name, "_value")]], values[[paste0(test_name, "_scale")]], values[[paste0(test_name, "_checkbox")]])
+    score <- transform_score(values[[paste0(test_name, "_value")]], values[[paste0(test_name, "_scale")]], T)
     return(score < (100 - (15 * sd_threshold)))
   }
   
   is_evaluated <- function(test_name) {
-    checkbox_name <- paste0(test_name, "_checkbox")
-    checkbox <- values[[checkbox_name]]
-    
-    value_name <- paste0(test_name, "_value")
-    valueID <- as.numeric(values[[value_name]])
-    
-    outcome <- length(valueID) == 0 || anyNA(valueID) || is.null(checkbox)
-
-    if (outcome) {
-      return(FALSE)
-    } else {
-      return(checkbox)
-    }
+    print(test_name)
+    print(paste0(test_name, "_value"))
+    raw <- values[[paste0(test_name, "_value")]]
+    print(raw)
+    num <- as.numeric(raw)
+    out <- !is.null(num) && length(num) == 1 && !is.na(num)
+    return(out)
   }
   
   
@@ -1172,7 +1132,6 @@ shinyServer(function(input, output, session) { #####
 
   observeEvent(input$output_button, {
    # output$results <- renderUI({
-      
       # Define the domains by grouping test categories
       domains <- list(
         Language = c("Naming", "Fluency"),
@@ -1198,12 +1157,13 @@ shinyServer(function(input, output, session) { #####
           for (category_name in domain_tests) {
             test_names <- generateTestNames(category_name)
             for (test_name in test_names) {
+
               scale_name <- paste0(test_name, "_scale")
               checkbox_name <- paste0(test_name, "_checkbox")
               
               is_eval <- is_evaluated(test_name)
               is_imp <- is_impaired(test_name, sd_threshold)
-              
+
               if (is_eval) {
                 evaluated_tests <- c(evaluated_tests, test_name)
               }
@@ -1211,6 +1171,7 @@ shinyServer(function(input, output, session) { #####
               if (is_eval && is_imp) {
                 impaired_tests <- c(impaired_tests, test_name)
               }
+
             }
           }
           
@@ -1259,7 +1220,6 @@ shinyServer(function(input, output, session) { #####
         if (!identical(impairment_flags,character(0)) & length(impairment_flags) > 0) {
           impaired_tot <- TRUE
           
-          
           # Identify domains for the test names
           category_names <- find_categories_for_names(impairment_flags, lapply(all_tests, sanitizeTestName))
           identified_domains <- unlist(identify_domains(category_names, domains))
@@ -1273,8 +1233,8 @@ shinyServer(function(input, output, session) { #####
           impaired_domains <- ""
           identified_domains <- c()
           impaired_domains_int <- c()
+          identified_domain_filt <- character(0)
         }
-        
         output1 <- paste0("Cutoff: ", threshold_label, "SD<br>",
                           "Phenotype: ",
                           case_when(length(unique(identified_domain_filt)) == 0~"No Impaired Domains.",
@@ -1285,7 +1245,6 @@ shinyServer(function(input, output, session) { #####
         #ensure correct display of domain names 
         impaired_domains <- str_replace(impaired_domains, "ExecutiveFunction","Executive Function") %>% 
           str_replace(., "AttentionProcessing","Attention Processing")
-        
         output_text <- paste0(output1, "Domains Impaired: ", impaired_domains, "")
         
         return(output_text)
@@ -1301,6 +1260,17 @@ shinyServer(function(input, output, session) { #####
                                                     domain_results$ExecutiveFunction$`2`$EvaluatedTests,
                                                     domain_results$AttentionProcessing$`2`$EvaluatedTests,
                                                     domain_results$Visuospatial$`2`$EvaluatedTests), lapply(all_tests, sanitizeTestName))
+      
+      identified_domains_applied <- unlist(identify_domains(category_names_applied, domains))
+      test_p_domain <- table(identified_domains_applied) %>% unlist()
+      domain_tests_provided <- length(which(test_p_domain >= 2))
+      
+      if (domain_tests_provided < 4) {
+        output_html("The calculator will not run unless data is provided for at least 2 measures in at least 4 cognitive domains.")
+        shinyjs::show("output_content")
+        return()
+      }
+      
       
       # Conditional inclusion of impairment output
       if("1 standard deviation" %in% input$cutoffSelection) {
@@ -1341,136 +1311,81 @@ shinyServer(function(input, output, session) { #####
       #Add modifiers to the output 
       output_content <- paste(output_content, '<h3>Modifiers</h3><ul>', sep="\n")
       
-      # Depression modifier
+      # Depression modifier — pick any entered score
       output_content <- paste(output_content, '<li>', "Depression: ", sep="\n")
-
-      depression_check <-input[["Beck_Depression_Inventory_(BDI-2)_checkbox"]] |         
-        input[["Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)_checkbox"]] |        
-        input[["Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)_checkbox"]] |
-        input[["Children’s_Depression_Inventory_(CDI)_checkbox"]] |
-        input[["Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)_checkbox"]]
-      # Check if any checkbox is checked for depression, depression tab was openend and at least one box is checked 
-      if (!identical(depression_check,logical(0))) {
-        
-        # Check if checkbox is checked for BDI-2
-        if (input[["Beck_Depression_Inventory_(BDI-2)_checkbox"]]) {
-          score <- input[["Beck_Depression_Inventory_(BDI-2)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Depression", "Beck Depression Inventory (BDI-2)", score), "</li>", sep="\n")
-        } else if (input[["Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)_checkbox"]]) {
-          score <- input[["Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Depression", "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)", score), "</li>", sep="\n")
-        } else if (input[["Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)_checkbox"]]) {
-          # # Check if checkbox is checked for PHQ-9
-          score <- input[["Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Depression", "Patient Health Questionnaire Depression Scale (PHQ-9)", score), "</li>", sep="\n")
-          # Children's Depression Inventory (CDI)
-        } else if (input[["Children’s_Depression_Inventory_(CDI)_checkbox"]]) {
-          score <- input[["Children’s_Depression_Inventory_(CDI)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Depression", "Children’s Depression Inventory (CDI)", score), "</li>", sep="\n")
-          
-        # Children's Depression Inventory – Second Edition: Self-Report (CDI-2: SR)
-        } else if (input[["Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)_checkbox"]]) {
-         score <- input[["Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)_value"]]
-         output_content <- paste(output_content, generate_modifier_output("Depression", "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)", score), "</li>", sep="\n")
-          
-        } else {
-        output_content <- paste(output_content, "No test selected", "</li>", sep="\n")
-        }
-      }else {
-        output_content <- paste(output_content, "No test selected", "</li>", sep="\n")
+      depression_tests <- c(
+         "Beck_Depression_Inventory_(BDI-2)",
+        "Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)",
+        "Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)",
+        "Children’s_Depression_Inventory_(CDI)",
+        "Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)"
+      )
+      avali <- sapply(depression_tests, is_evaluated)
+      
+      if (any(avali)) {
+        sel <- depression_tests[which(avali)[1]]
+        score <- input[[paste0(sel, "_value")]]
+        pretty <- gsub("_", " ", sel)
+        output_content <- paste0(
+          output_content,
+          generate_modifier_output("Depression", pretty, score),
+          "</li>"
+        )
+      } else {
+        output_content <- paste0(output_content, "No test selected", "</li>")
       }
       
-      # Anxiety modifier
+      # Anxiety modifier — pick any entered score
       output_content <- paste(output_content, '<li>', "Anxiety: ", sep="\n")
-      
-      anxiety_check <- input[["Beck_Anxiety_Inventory_(BAI)_checkbox"]] | 
-        input[["Generalized_Anxiety_Disorder_(GAD-7)_checkbox"]] | 
-        input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_checkbox"]] |
-        input[["Screen_for_Child_Anxiety_Related_Disorders_(SCARED)_checkbox"]] |
-        input[["Multidimensional_Anxiety_Scale_for_Children_(MASC)_checkbox"]] |
-        input[["Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)_checkbox"]]
-
-      # Check if any checkbox is checked for anxiety
-      if (!identical(anxiety_check, logical(0))) {
-        
-        # Beck Anxiety Inventory (BAI)
-        if (input[["Beck_Anxiety_Inventory_(BAI)_checkbox"]]) {
-          score <- input[["Beck_Anxiety_Inventory_(BAI)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Beck Anxiety Inventory (BAI)", score), "</li>", sep="\n")
-          
-          # Generalized Anxiety Disorder (GAD-7)
-        } else if (input[["Generalized_Anxiety_Disorder_(GAD-7)_checkbox"]]) {
-          score <- input[["Generalized_Anxiety_Disorder_(GAD-7)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Generalized Anxiety Disorder (GAD-7)", score), "</li>", sep="\n")
-          
-          # Multidimensional Anxiety Questionnaire (MAQ)
-        } else if (input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_checkbox"]]) {
-          score <- input[["Multidimensional_Anxiety_Questionnaire_(MAQ)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Multidimensional Anxiety Questionnaire (MAQ)", score), "</li>", sep="\n")
-          
-          # Screen for Child Anxiety Related Disorders (SCARED)
-        } else if (input[["Screen_for_Child_Anxiety_Related_Disorders_(SCARED)_checkbox"]]) {
-          score <- input[["Screen_for_Child_Anxiety_Related_Disorders_(SCARED)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Screen for Child Anxiety Related Disorders (SCARED)", score), "</li>", sep="\n")
-          
-          # Multidimensional Anxiety Scale for Children (MASC)
-        } else if (input[["Multidimensional_Anxiety_Scale_for_Children_(MASC)_checkbox"]]) {
-          score <- input[["Multidimensional_Anxiety_Scale_for_Children_(MASC)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Multidimensional Anxiety Scale for Children (MASC)", score), "</li>", sep="\n")
-          
-          # Revised Children’s Manifest Anxiety Scale (RCMAS)
-        } else if (input[["Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)_checkbox"]]) {
-          score <- input[["Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Anxiety", "Revised Children’s Manifest Anxiety Scale (RCMAS)", score), "</li>", sep="\n")
-          
-        } else {
-          output_content <- paste(output_content, "Anxiety:", "No test selected.", "</li>", sep="\n")
-        }
-        
+      anxiety_tests <- c(
+        "Beck_Anxiety_Inventory_(BAI)",
+        "Generalized_Anxiety_Disorder_(GAD-7)",
+        "Multidimensional_Anxiety_Questionnaire_(MAQ)",
+        "Screen_for_Child_Anxiety_Related_Disorders_(SCARED)",
+        "Multidimensional_Anxiety_Scale_for_Children_(MASC)",
+        "Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)"
+      )
+      avali <- sapply(anxiety_tests, is_evaluated)
+      if (any(avali)) {
+        sel <- anxiety_tests[which(avali)[1]]
+        score <- input[[paste0(sel, "_value")]]
+        pretty <- gsub("_", " ", sel)
+        output_content <- paste0(
+          output_content,
+          generate_modifier_output("Anxiety", pretty, score),
+          "</li>"
+        )
       } else {
-        output_content <- paste(output_content, "No test selected.", "</li>", sep="\n")
+        output_content <- paste0(output_content, "No test selected", "</li>")
       }
       
-      # Behavior modifier
+      # Behavior modifier — pick any entered score
       output_content <- paste(output_content, '<li>', "Behavior: ", sep="\n")
-      
-      behavior_check <- input[["Children’s_Behavior_Checklist_(CBCL)_checkbox"]] | 
-        input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory_checkbox"]] | 
-        input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory_checkbox"]]
-      
-      # Check if any checkbox is checked for behavior
-      if (!identical(behavior_check, logical(0))) {
-        
-        # Children's Behavior Checklist (CBCL) - Total Problems
-        if (input[["Children’s_Behavior_Checklist_(CBCL)_checkbox"]]) {
-          score <- input[["Children’s_Behavior_Checklist_(CBCL)_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Behavior", "Children’s Behavior Checklist (CBCL)", score), "</li>", sep="\n")
-          
-          # Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory
-        } else if (input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory_checkbox"]]) {
-          score <- input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Behavior", "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory", score), "</li>", sep="\n")
-          
-          # Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory
-        } else if (input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory_checkbox"]]) {
-          score <- input[["Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory_value"]]
-          output_content <- paste(output_content, generate_modifier_output("Behavior", "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory", score), "</li>", sep="\n")
-          
-        } else {
-          output_content <- paste(output_content, "Behavior:", "No test selected.", "</li>", sep="\n")
-        }
-        
+      behavior_tests <- c(
+        "Children’s_Behavior_Checklist_(CBCL)",
+        "Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory",
+        "Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory"
+      )
+      avali <- sapply(behavior_tests, is_evaluated)
+      if (any(avali)) {
+        sel <- behavior_tests[which(avali)[1]]
+        score <- input[[paste0(sel, "_value")]]
+        pretty <- gsub("_", " ", sel)
+        output_content <- paste0(
+          output_content,
+          generate_modifier_output("Behavior", pretty, score),
+          "</li>"
+        )
       } else {
-        output_content <- paste(output_content, "No test selected.", "</li>", sep="\n")
+        output_content <- paste0(output_content, "No test selected", "</li>")
       }
-      
       
       output_content <- paste(output_content, "<br>")
       
       #add considered test 
 
       output_content <- paste(output_content, '<h3>Considered Tests</h3><ul>', sep="\n")
-      
+ 
       #conserv the given input names by the user 
       fetchInputValues <- function(evaluated_tests) {
         # Initialize a vector to store the input values
@@ -1484,7 +1399,7 @@ shinyServer(function(input, output, session) { #####
         
         return(input_values)
       }
-      
+
       # Loop through each domain and display evaluated tests
       for (domain_name in names(domains)) {
         domain_tests <- domains[[domain_name]]
@@ -1497,19 +1412,7 @@ shinyServer(function(input, output, session) { #####
         output_content <- paste(output_content, paste(str_replace_all(fetchInputValues(domain_results[[domain_name]]$`1`$EvaluatedTests), "_", " "), collapse = ", "), '</li>', sep="\n")
       }
 
-      #Raise warning when to little tests are applied 
-      identified_domains_applied <- unlist(identify_domains(category_names_applied, domains))
-      
-      test_p_domain <- identified_domains_applied %>% 
-        table() %>% 
-        unlist()
-      
-      domain_tests_provided <- which(test_p_domain >=2) %>% length()
-      
-      if(domain_tests_provided <4){
-        output_content <- "The calculator will not run unless data is provided for at least 2 measures in at least 4 cognitive domains."
-
-      } else if (domain_tests_provided == 4){
+      if (domain_tests_provided == 4){
 
         output_content <- paste0("<b> Warning:  This phenotype is based on only 4 cognitive domains.  Please ensure that all domains with high base rates for cognitive impairment in your population of interest (e.g., language and memory for TLE) are included to ensure the most accurate cognitive phenotype. </b> <br> <br>", output_content)
 
@@ -1519,7 +1422,7 @@ shinyServer(function(input, output, session) { #####
         
       output_html(output_content[1])
       
-      print(paste("Final output_html content:", output_html()))
+      #print(paste("Final output_html content:", output_html()))
       # 
       # 
       # # Return the HTML content
@@ -1643,29 +1546,40 @@ shinyServer(function(input, output, session) { #####
       # Write the table to the specified file path
      # write_csv(downloadtable, file)
       rows_max <- 10000#number of rows to applly to. 
-      downloadtable <- cbind(tibble(Legend = "Red colored numbers indicate values that differ by more than 2 SD."),downloadtable)
+      downloadtable <- cbind(tibble(Legend = "Red colored numbers indicate values that exceed 2 SD above or below the mean. Please confirm that values are entered correctly."),downloadtable)
       
       wb <- createWorkbook()
       addWorksheet(wb,"IC-Code-Table")# Write the table to the worksheet
       writeData(wb,"IC-Code-Table", downloadtable)# Apply conditional formatting to score columns based on the scale
-      for(col_name in colnames(downloadtable)){
-        if(grepl("-- Standard Score \\(M=100, SD=15\\)$", col_name)){
-           conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule =">130", style = createStyle(fontColour ="#FF0000"))
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule ="<70", style = createStyle(fontColour ="#FF0000"))
-        }else if(grepl("-- Scaled Score \\(M=10, SD=3\\)$", col_name)){
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule =">16", style = createStyle(fontColour ="#FF0000"))
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule ="<4", style = createStyle(fontColour ="#FF0000"))
-        }else if(grepl("-- T-score \\(M=50, SD=10\\)$", col_name)){
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule =">70", style = createStyle(fontColour ="#FF0000"))
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule ="<30", style = createStyle(fontColour ="#FF0000"))
-        }else if(grepl("-- Z-score \\(M=0, SD=1\\)$", col_name)){
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule =">2", style = createStyle(fontColour ="#FF0000"))
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule ="<-2", style = createStyle(fontColour ="#FF0000"))
-        }else if(grepl("-- Percentile Score \\(%tile\\)$", col_name)){
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule =">98", style = createStyle(fontColour ="#FF0000"))
-          conditionalFormatting(wb,"IC-Code-Table", cols = which(colnames(downloadtable)== col_name), rows =2:rows_max, rule ="<2", style = createStyle(fontColour ="#FF0000"))
+      
+      highlight_style <- createStyle(fontColour = "#FF0000")
+      for (col_name in colnames(downloadtable)) {
+        col_idx    <- which(colnames(downloadtable) == col_name)
+        col_letter <- int2col(col_idx)
+        upper <- lower <- NULL
+        
+        if      (grepl("-- Standard Score",       col_name)) { upper <- 130; lower <-  70 }
+        else if (grepl("-- Scaled Score",         col_name)) { upper <-  16; lower <-   4 }
+        else if (grepl("-- T-score",              col_name)) { upper <-  70; lower <-  30 }
+        else if (grepl("-- Z-score",              col_name)) { upper <-   2; lower <-  -2 }
+        else if (grepl("-- Percentile Score",     col_name)) { upper <-  98; lower <-   2 }
+        
+        if (!is.null(upper)) {
+          conditionalFormatting(
+            wb, "IC-Code-Table",
+            cols = col_idx, rows = 2:rows_max,
+            rule = paste0(col_letter, "2>", upper),
+            style = highlight_style, type = "expression"
+          )
+          conditionalFormatting(
+            wb, "IC-Code-Table",
+            cols = col_idx, rows = 2:rows_max,
+            rule = paste0(col_letter, "2<", lower),
+            style = highlight_style, type = "expression"
+          )
         }
-      }# Save the workbook to the specified file path
+      }
+  # Save the workbook to the specified file path
   saveWorkbook(wb, file, overwrite =TRUE)
     }
   )
@@ -1968,9 +1882,12 @@ shinyServer(function(input, output, session) { #####
                 round(`Executive Function Domain_imp_percent`), "% Executive Domain\n",
                 round(`Attention/Processing Speed Domain_imp_percent`), "% Attention/Processing Speed Domain\n",
                 round(`Visuospatial Domain_imp_percent`), "% Visuospatial Domain"
+              ),
+              text_info_simp = paste0(
+                "Number of individuals: ", `Number of individuals`, "\n"
               )
             ) %>% 
-            mutate(text_info = ifelse(Phenotype %in% c("Single Domain","Bi-domain"),text_info,""))
+            mutate(text_info = ifelse(Phenotype %in% c("Single Domain","Bi-domain"),text_info,text_info_simp))
           
           # Create the pie chart
           plot_ly(

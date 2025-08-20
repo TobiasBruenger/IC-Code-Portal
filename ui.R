@@ -60,6 +60,26 @@ shinyUI(
       color: #ccccff !important;
     }
   ")),
+      # --- Footer styles + footer bar ---
+      tags$style(HTML("
+  body { padding-bottom: 64px; }         /* room for fixed footer */
+  .app-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #f7f7f7; border-top: 1px solid #ccc;
+    padding: 8px 16px; z-index: 1000; font-size: 14px;
+  }
+  .app-footer a { color: #6a1b9a; text-decoration: underline; }
+  .app-footer .right { float: right; }
+")),
+      
+      tags$footer(
+        class = "app-footer",
+        span(HTML("&copy; IC-CoDE Portal")),
+        span(class = "right",
+             actionLink("privacy_link", "Privacy Policy"),
+             HTML("&nbsp;|&nbsp; Last updated: "), span(id = "pp_date", "Aug 2025")
+        )
+      ),
       
       navbarPage(
         theme = "portaltheme.css",
@@ -73,7 +93,7 @@ shinyUI(
                  fluidRow(style = "background-color: ghostwhite;",
                           column(12, br(), align = "center",
                                  h1(strong("Welcome to the IC-CoDE Portal"), style = "color: #303030; font-size: 40px;"),
-                                 h3("An interactive website to apply the international classification of cognitive disorders in epilepsy (IC-CoDE)", style = "color:#303030")),
+                                 h3("An interactive website to apply the International Classification of Cognitive Disorders in Epilepsy (IC-CoDE)", style = "color:#303030")),
                           br(),
                           br(),
                           column(12, align = "left",
@@ -88,21 +108,331 @@ shinyUI(
         
         
         #Guidelines Panel ####
-        tabPanel("Guidelines", value = "guidelinetab",
-                 div(style = "margin: 5% 10%; text-align:justify; max-width:1400px;", 
-                    h2(HTML("<u> Initial Considerations for IC-CoDE Users </u>"), style = "margin-bottom: 30px;"), 
-                    h4(HTML("The goal of the IC-CoDE is to apply the cognitive model (Figure 1) using the operational definitions provided in order to arrive at a diagnostic cognitive phenotype (Figure 2). Step-by-step instructions for using the IC-CoDE calculator are provided below. For more information refer to Norman et al., 2021, <i>Epilepsia</i> and McDonald et al., 2023, <i>Neuropsychology</i>.")),
-                    br(),
-                    HTML('<img src="GuidelineFigure1.jpeg" alt="Your Image" width="500", max-height="300" />'),
-                    HTML('<img src="GuidelineFigure2.jpeg" alt="Your Image" width="860", max-height="300" />'),
-                    br(),
-                    br(),
-                    h4(HTML("<b> Step 1: </b> Use all available neuropsychological data to construct the five target cognitive domains (i.e., language, memory, executive, visuospatial, attention/speed) consisting of at least two test metrics per cognitive domain.
-Note: Ideally, cognitive measures from all 5 cognitive domains should be used when generating IC-CoDE phenotypes. However, in instances where there were not enough measures administered within each domain, it may be possible to general an IC-CoDE phenotype with only 4 cognitive domains. However, careful consideration should be given to the patient population of interest to ensure that an “essential” cognitive domain is not omitted (i.e., domains known to have a high base rate of impairment in that population). For example, memory and language would be considered essential domains in temporal lobe epilepsy and visuospatial would be considered an essential domain for parietal lobe epilepsy. 
-                           <br> <br>
-                           <b> Step 2: </b> If there are more than 2 measures in a given cognitive domain and control or normative data are available, we recommended including the 2 most sensitive measures (i.e., those with the highest base rate of impairment) to generate cognitive phenotypes.
-                           <br> <br>
-                           <b> Step 3: </b> Decide on the operational definition of abnormality to be used (-1 or -1.5 or -2SD)"))
+        tabPanel("Instructions for Use", value = "guidelinetab",
+                 div(style = "margin: 5% 10%; text-align:justify; max-width:1200px;",
+                     
+                     #### PART 1: INDIVIDUAL DATA ENTRY ####
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     h1("Part 1: Individual Data Entry"),
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 1 (image right)
+                     fluidRow(
+                       column(
+                         6,
+                         h4(tags$b("Step 1: Set Parameters")),
+                         # Main bullets = disc; sub-bullets = circle (to match the template)
+                         tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                 tags$li(HTML('Select the <b>“Individual”</b> tab')),
+                                 tags$li(
+                                   tagList(
+                                     HTML('<b>Cutoff Selection:</b> Choose 1, 1.5, and/or 2 SD below the normative mean to define cognitive impairment.'),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML('<i>Tip:</i> Remove any others that you are not interested in using.'))
+                                     )
+                                   )
+                                 ),
+                                 tags$li(
+                                   tagList(
+                                     HTML('<b>Default Score Scale:</b> Choose from:'),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li('Standard score, T-score, z-score, scaled score, or percentile.'),
+                                             tags$li(HTML('<i>Note:</i> This is only the default — you can change it per test.'))
+                                     )
+                                   )
+                                 )
+                         )
+                       ),
+                       column(6, align = "center",
+                              tags$img(src = "instructions_1.png", 
+                                       style = "width: 400px; height:auto; max-height:100%; object-fit:contain;")
+                       )
+                     ),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 2 (image right)
+                     fluidRow(
+                       column(
+                         6,
+                         h4(tags$b("Step 2: Enter Cognitive Test Data")),
+                         p("Cognitive domains include:"),
+                         tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                 
+                                 # Language
+                                 tags$li(
+                                   tagList(
+                                     tags$b("Language"),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML("<b>Subdomains:</b> Naming, Fluency")),
+                                             tags$li(HTML("Example Tests: Boston Naming Test, Letter/Category Fluency, etc.")),
+                                             tags$li(HTML("Enter the test name, score, and the scale on which the test score is provided for this and all other domains.")),
+                                             tags$li(HTML("<i>Note:</i> The test names provided are commonly used measures. If you do not use these measures, you may leave them blank or type over them to include the names of the tests you have available.")),
+                                             tags$li(HTML("<i>Note:</i> The specific test and test version used does not matter. The calculator will work for any test that you enter into the Measure field."))
+                                     )
+                                   )
+                                 ),
+                                 
+                                 # Memory
+                                 tags$li(
+                                   tagList(
+                                     tags$b("Memory"),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML("<b>Subdomains:</b> Word List Recall, Story Recall, Word Pair Recall, Design Recall")),
+                                             tags$li(HTML("Example Tests: CVLT, Logical Memory, BVMT, etc.")),
+                                             tags$li(HTML("<i>Tip:</i> Make sure the score scale matches the data (e.g., T-score, z-score, scaled score)."))
+                                     )
+                                   )
+                                 ),
+                                 
+                                 # Executive Function
+                                 tags$li(
+                                   tagList(
+                                     tags$b("Executive Function"),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML("<b>Subdomains:</b> Set-Shifting, Problem-Solving, Response Inhibition")),
+                                             tags$li(HTML("Example tests: Trail Making Test Part B, WCST")),
+                                             tags$li(HTML("<i>Tip:</i> When possible, use scores from different measures within the same domain (e.g., Trail Making Test – Part B, WCST Perseverative Errors) rather than two scores from a single measure (e.g., WCST perseverative errors and conceptual level responses)."))
+                                     )
+                                   )
+                                 ),
+                                 
+                                 # Attention / Processing Speed
+                                 tags$li(
+                                   tagList(
+                                     tags$b("Attention/Processing Speed"),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML("<b>Subdomains:</b> Attention/Working Memory, Processing Speed")),
+                                             tags$li(HTML("Example Tests: Digit Span, Trail Making Test Part A, Coding")),
+                                             tags$li(HTML("<i>Tip:</i> Make sure the score scale matches your source (e.g., scaled scores from WAIS subtests, T-scores from Trail Making Test)."))
+                                     )
+                                   )
+                                 ),
+                                 
+                                 # Visuospatial
+                                 tags$li(
+                                   tagList(
+                                     tags$b("Visuospatial"),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML("<b>Subdomains:</b> Visuoconstruction, Visuoperception")),
+                                             tags$li(HTML("Example Tests: Block Design, <u>Judgment of Line Orientation</u>")),
+                                             tags$li(HTML("<i>Tip:</i> Adjust the scale type and include the relevant scores."))
+                                     )
+                                   )
+                                 ),
+                                 
+                                 # Mood
+                                 tags$li(
+                                   tagList(
+                                     tags$b("Mood Symptoms (Optional)"),
+                                     tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                             tags$li(HTML("<b>Subdomains:</b> Depression, Anxiety, Behavior")),
+                                             tags$li(HTML("Example Tests: BDI (Depression), BAI (Anxiety), CBCL (Behavior)")),
+                                             tags$li(HTML("<i>Note:</i> The mood and behavior inventories are not used in phenotype classification, but may be included as potential modifiers."))
+                                     )
+                                   )
+                                 )
+                         ),
+                         
+                         # General tip and note (with red warning icon)
+                         p(HTML("<i>General Tip:</i> It is recommended that users include tests of different types within a domain whenever possible (e.g., naming and fluency rather than two fluency tasks in the Language domain).")),
+                         p(HTML(
+                           '<i>General Note:</i> A small warning button ',
+                           as.character(tags$i(class="fa fa-exclamation-triangle", style="color:red;")),
+                           " may appear to the right of a test score to indicate that a score may have been entered incorrectly or the incorrect scale type selected. This is simply a prompt to check for errors; the calculator will still work if this warning button is present."
+                         ))
+                       ),
+                       column(6, align = "center",
+                              tags$img(src = "instructions_2.png", 
+                                       style = "width: 400px; height:auto; object-fit:contain; margin-top:10px;")
+                       )
+                     ),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 3 (image right)
+                     fluidRow(
+                       column(6,
+                              h4(tags$b("Step 3: Submit")),
+                              tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                      tags$li(HTML("Scroll back up and <b>review all entries.</b>")),
+                                      tags$li(HTML("Make sure at <b>least two tests per domain</b> are included in at <b>least four domains.</b>")),
+                                      tags$li(HTML('Click <b>"Submit Entries"</b>.')),
+                                      tags$li(HTML('The IC-CoDE system will display:'),
+                                              tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                                      tags$li("Cutoff(s) used"),
+                                                      tags$li("Overall phenotype (e.g., Generalized, Bi-Domain Impairment)"),
+                                                      tags$li("Domains impaired"),
+                                                      tags$li("Any selected modifiers"),
+                                                      tags$li("Tests included in the phenotype calculation")
+                                              )
+                                      ),
+                                      tags$li(HTML("You may download <b>results</b> or <b>reset</b> to enter a new patient/participant."))
+                              )
+                       ),
+                       column(6, align = "center",
+                              tags$img(src = "instructions_3.png", 
+                                       style = "width: 400px; height:auto; object-fit:contain; margin-top:10px;")
+                       )
+                     ),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Individual Workflow Summary (centered)
+                     h4(tags$b("Individual Data Entry – Workflow Summary")),
+                     div(style = "text-align:left; margin:20px 0;",
+                         tags$img(src = "instructions_4.png", 
+                                  style = "width: 600px; height:auto; object-fit:contain;")
+                     ),
+                     br(),
+                     br(),
+                     br(),
+                     
+                     #### PART 2: GROUP DATA ENTRY ####
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     h1("Part 2: Group Data Entry"),
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 1 (image right)
+                     fluidRow(
+                       column(6,
+                              h4(tags$b("Step 1: Set Parameters")),
+                              tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                      tags$li(HTML('Select the <b>“Group”</b> tab')),
+                                      tags$li(
+                                        tagList(
+                                          HTML('<b>Cutoff Selection:</b> Choose 1, 1.5, and/or 2 SD below the normative mean to define cognitive impairment.'),
+                                          tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                                  tags$li(HTML('<i>Tip:</i> Remove any others that you are not interested in using.'))
+                                          )
+                                        )
+                                      ),
+                                      tags$li(
+                                        tagList(
+                                          HTML('<b>Default Score Scale:</b> Choose from:'),
+                                          tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                                  tags$li('Standard score, T-score, z-score, scaled score, or percentile.'),
+                                                  tags$li(HTML('<i>Note:</i> This is only the default — you can change it per test.'))
+                                          )
+                                        )
+                                      )
+                              )
+                       ),
+                       column(6, align = "center",
+                              tags$img(src = "instructions_group_1.png", 
+                                       style = "width: 400px; height:auto; object-fit:contain; margin-top:10px;")
+                       )
+                     ),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 2 (image right)
+                     fluidRow(
+                       column(6,
+                              h4(tags$b("Step 2: Create Group Template")),
+                              tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                      tags$li(HTML('Under the <b>Group</b> tab, click <b>"Create Template"</b>.')),
+                                      tags$li("As described above for Individual Data, for each cognitive domain:"),
+                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                              tags$li(HTML("Select or enter <b>all tests</b> in your battery.")),
+                                              tags$li(HTML("Set the correct <b>score scale</b> (T-score, z-score, scaled score).")),
+                                              tags$li('Place a check in the "Include" box for all tests you want included in the cognitive phenotype generation.'),
+                                              tags$li(HTML("If your test is not listed, <b>type it in</b>.")),
+                                      ),
+                                      tags$li(HTML("Include <b>at least two tests per domain in at least four domains</b>.")),
+                                      tags$li(HTML('<b>Enter Filters (optional)</b>')),
+                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                              tags$li(HTML('<i>Note:</i> You can use the provided filters or enter others (type over existing names). Check the "Include" box for any filters you want included.')),
+                                      ), 
+                                      tags$li(HTML('Once complete, click <b>"Download Group Table Template"</b>.'))
+                              ),
+                              p(HTML('<i>General Tip:</i> It is recommended that users include tests of different types within a domain whenever possible (e.g., naming and fluency rather than two fluency tasks).')),
+                       ),
+                       column(6, align = "center",
+                              tags$img(src = "instructions_group_2.png", 
+                                       style = "width: 400px; height:auto; object-fit:contain; margin-top:10px;")
+                       )
+                     ),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 3 (image right)
+                     fluidRow(
+                       column(6,
+                              h4(tags$b("Step 3: Populate Template")),
+                              tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                      tags$li("Open the downloaded spreadsheet file."),
+                                      tags$li("Enter data:"),
+                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                              tags$li(HTML("<b>Each row = one participant.</b>")),
+                                              tags$li(HTML("<b>Each column = one test.</b>")),
+                                      ),
+                                      tags$li("Match scores to correct formats (e.g., scaled scores for WAIS subtests)."),
+                              ),
+                              p(HTML('<i>General Note:</i> Do <u><b>not</b></u> modify the variable names in row 1 of the spreadsheet. These are required for the phenotype calculations to run correctly.')),
+                              p(HTML('<i>General Note:</i> Some test scores entered may appear in <b style="color:red;">RED</b> to indicate a possible entry or scale mismatch. This is a prompt to check for errors; the calculator will still work if these warnings are present.'))
+                              
+                       )
+                     ),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Step 4 (image right)
+                     fluidRow(
+                       column(6,
+                              h4(tags$b("Step 4: Upload and Generate Results")),
+                              tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                      tags$li(HTML('Return to IC-CoDE Portal → <b>Group tab.</b>')),
+                                      tags$li(HTML('Click <b>"Upload Data and Generate Results"</b>.')),
+                                      tags$li(HTML("Use <b>Browse</b> to select your completed template file.")),
+                                      tags$li("Results will include:"),
+                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                              tags$li("Display results as pie chart(s) showing IC-CoDE phenotype distributions with hover details for single and bi-domain slices."),
+                                              tags$li("Options to visualize by desired filters (e.g., sex, side of seizures)."),
+                                              tags$li(HTML("Option to <b>download</b> the results in a spreadsheet format."))
+                                      )
+                              )
+                       ),
+                       column(6, align = "center",
+                              tags$img(src = "instructions_group_3.png", 
+                                       style = "width: 350px; height:auto; object-fit:contain; margin-top:10px;")
+                       )
+                     ), 
+                     
+                     br(),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     h1("BEST PRACTICES"),
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     fluidRow(
+                       column(12,
+                              tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
+                                      tags$li("Make sure scores and scales match correctly (e.g., T-score = 50 mean, z-score = 0 mean)."),
+                                      tags$li(
+                                        tagList(
+                                          "Double-check that:",
+                                          tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                                  tags$li(HTML('All included tests have scores (individual calculator) or that all included tests have the “Include” button checked (group calculator).')),
+                                                  tags$li(HTML('All domains are sufficiently represented, ideally tapping into different constructs within the domain (e.g., fluency and naming for language).')),
+                                                  tags$li(HTML('Be certain that there are <b>at least two tests</b> in <b>at least four domains</b>.')),
+                                                  tags$li(HTML('Be sure that domains that are highly relevant for the patient group of interest (e.g., language and memory for temporal lobe epilepsy) are included.'))
+                                          )
+                                        )
+                                      )
+                              )
+                       )
+                     ),
+                     br(),
+                     
+                     tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
+                     
+                     # Group Workflow Summary (centered)
+                     h4(tags$b("Group Data Entry – Workflow Summary")),
+                     div(style = "text-align:left; margin:20px 0;",
+                         tags$img(src = "instructions_group_4.png", 
+                                  style = "width: 900px; height:auto; object-fit:contain;")
+                     ),
                  )
         ),
         
@@ -140,8 +470,8 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                      ),
                      
                      column(12, 
-                            h2(strong("Directions")),
-                            h4("Please answer the series of questions below to customize the IC-CoDE calculator in the way that best suits your research. You have the option to select how many tests you would like to use in each cognitive domain to generate cognitive phenotypes; however, you must have a minimum of at least 2 tests per cognitive domain for the calculator to generate IC-CoDE phenotypes. It is recommended that you include tests of different types within each cognitive domain whenever possible (e.g., naming and fluency tasks rather than two fluency tasks).", style = "line-height: 1.8; margin-bottom: 40px;"),
+                            h2(strong("IC-CoDE Calculator")),
+                            h4("Please answer the series of questions below to customize the IC-CoDE calculator in the way that best suits your research. You have the option to select how many tests you would like to use in each cognitive domain to generate cognitive phenotypes; however, you must have a minimum of at least 2 tests per cognitive domain for the calculator to generate IC-CoDE phenotypes. It is recommended that you include tests of different types within each cognitive domain whenever possible (e.g., naming and fluency tasks rather than two fluency tasks). For detailed instructions on using the IC-CoDE calculator, please use the “Instructions” tab above.", style = "line-height: 1.8; margin-bottom: 40px;"),
                        h3("Would you like to calculate cognitive phenotype(s) for an individual patient or for a group of patients?"),
                        tags$style(HTML("
                           .caltab .nav > li.active > a {
@@ -171,7 +501,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                         #div(style = "margin-bottom: 30px;"),
                                       br(),
                                         selectInput("cutoffSelection", 
-                                                    label = h4("What cutoff would you like to use to define cognitive impairment on each cognitive measure?"),
+                                                    label = h4("What cutoff would you like to use to define cognitive impairment on each cognitive measure (select all that apply; to remove a cutoff, hit the delete or backspace button on your keyboard)?"),
                                                     choices = c("1 standard deviation", 
                                                                 "1.5 standard deviations", 
                                                                 "2 standard deviations"),
@@ -180,7 +510,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                     width = "100%" ),
                                       br(),
                                       selectInput("scaleSelection", 
-                                                  label = h4("Which scale would you like to use at the default scale for score entry"),
+                                                  label = h4("Which scale would you like to use at the default scale for score entry?"),
                                                   choices = c("Standard Score (M=100, SD=15)", 
                                                               "Scaled Score (M=10, SD=3)", 
                                                               "T-score (M=50, SD=10)",
@@ -190,7 +520,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                   multiple = FALSE,
                                                   width = "100%" ),
                                       br(),
-                                        h3("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score). A higher test score always indicates a better test result. Please put a check mark next to all measures you would like to include in the phenotype."),
+                                        h3("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score). A higher test score always indicates a better test result. Several common measures are provided as examples, but these can be deleted or replaced with the measures you have available by simply typing over the measure name. The calculator will generate an IC-CoDE phenotype using only the measures for which you enter a score."),
                                         #insert here the new code#
                                       useShinyjs(),
                                       tags$style("
@@ -436,7 +766,8 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                 hidden(div(id = "output_content", uiOutput("results"))),
                                                 downloadButton("download_link", "Download HTML"),
                                             )
-                                     )
+                                     ),
+                                     p("When publishing manuscripts that make use of the IC-CoDE portal to generate phenotype data, we ask that you please include an acknowledgement. We recommend the following boilerplate language: IC-CoDE phenotype data were generated using the IC-CoDE Portal (IC-CoDE-Portal.ccf.org), which was funded by an American Epilepsy Society Infrastructure Grant (Award ID 1153665).")
                                      
                       
                                       
@@ -445,7 +776,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                              tabPanel("Group", 
                                       br(),
                                 selectInput("cutoffSelection_MG", 
-                                            label = h4("What cutoff would you like to use to define cognitive impairment on each cognitive measure?"),
+                                            label = h4("What cutoff would you like to use to define cognitive impairment on each cognitive measure (select all that apply; to remove a cutoff, hit the delete or backspace button on your keyboard)?"),
                                             choices = c("1 standard deviation", 
                                                         "1.5 standard deviations", 
                                                         "2 standard deviations"),
@@ -454,7 +785,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                             width = "100%" ),
                                 br(),
                                 selectInput("scaleSelection_MG", 
-                                            label = h4("Which scale would you like to use at the default scale for score entry"),
+                                            label = h4("Which scale would you like to use at the default scale for score entry?"),
                                             choices = c("Standard Score (M=100, SD=15)", 
                                                         "Scaled Score (M=10, SD=3)", 
                                                         "T-score (M=50, SD=10)",
@@ -466,12 +797,12 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                 br(),
                                 
                                 
-                                h3("Please select an option below: generate a data entry template or upload your completed table to process and generate results"),
+                                h3("Please select an option below: create a data entry template or upload your completed data template to process and generate results"),
                                 tabsetPanel(
                                   ##create template ####
                                   tabPanel("Create Template",
-                                    h4("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score)."),
-                                    h4(tags$b("Note:"),"Once you've filled in the Excel template, you can upload it directly using the 'Upload data and generate results tab' to generate cognitive phenotypes."),
+                                    h3("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score). A higher test score always indicates a better test result. At the bottom, you also have the option of including data for mood questionnaires and filters, or covariates, you may want to use in your research (e.g., demographic and disease variables). Several common measures and filters are provided as examples, but these can be deleted or replaced (simply type over the existing measures or filter) with the measures or filters relevant to your research. ",tags$b("Please be sure to check the “Include” box to the right of each measure that you want included in your data entry template.")),
+                                    h4(tags$b("Note:"),"Once you are done selecting your test list, you will be able to download your data entry template in an Excel format in which you can enter the relevant test scores and variables at your convenience. You can then return to the website with the completed data file at a later time and use the 'Upload data and generate results tab' to generate cognitive phenotypes."),
                                     
                                     #Group UI 
                                     div(class = "custom-text-box", "LANGUAGE"),
@@ -566,23 +897,17 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                     column(8, align = "left",         
                                            div(style = "margin-top: 40px; margin-bottom: 20px;",
                                                #hidden(div(id = "output_content", uiOutput("results"))),
-                                               h4("Download excel table template"),
+                                               h4("Download your Excel data template (Note: The website does save your Excel data template for future use, so please be sure to download and save it elsewhere until it is completed and ready to upload for analysis)."),
                                                downloadButton("download_table", "Download group table template"),
                                            )
                                     ),
                                     column(12),
                                   ),
                                   tabPanel("Upload data and generate results",
-                                
-                                
-                                column(8, align = "left",         
-                                       div(style = "margin-top: 0px; margin-bottom: 40px; width:100%;",
+                                           h4(HTML(paste0(tags$b("Upload completed Excel data template to generate IC-CoDE phenotypes"), "  (the website does not require any additional information to generate IC-CoDE phenotypes from a completed data template in which all scores have been entered)"))),
                                            #hidden(div(id = "output_content", uiOutput("results"))),
-                                           fileInput("file_upload", h4(HTML(paste0(tags$b("Upload excel file"), " (no additional specification on website are needed)")))
-, accept = c("excel",".xlsx")),
-                                       )
-                                ),
-                                
+                                           fileInput("file_upload",label="",
+                                                     accept = c("excel",".xlsx")),
                                 #pop up download 
                                 tags$script(HTML('
   $(document).on("shiny:connected", function(event) {
@@ -594,8 +919,13 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
   });
 ')),
                                 
+                                
                                 column(12,
-                                       uiOutput("file_upload_status"))
+                                       uiOutput("file_upload_status")),
+                                
+                                p("When publishing manuscripts that make use of the IC-CoDE portal to generate phenotype data, we ask that you please include an acknowledgement. We recommend the following boilerplate language: IC-CoDE phenotype data were generated using the IC-CoDE Portal (IC-CoDE-Portal.ccf.org), which was funded by an American Epilepsy Society Infrastructure Grant (Award ID 1153665).")
+                                
+                                
                                   ),
                                 )#close group split panel
 
@@ -629,18 +959,18 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                  title = h2("Epilepsy", align = "center"),
                                  timelineBlock(reversed = FALSE, width = 12,
                                                timelineLabel(2024, color = "teal"),
-                                               timelineItem(title = "Cortical Thickness Patterns of CognitiveImpairment Phenotypes in Drug-ResistantTemporal Lobe Epilepsy",
+                                               timelineItem(title = "Cortical Thickness Patterns of Cognitive Impairment Phenotypes in Drug-ResistantTemporal Lobe Epilepsy",
                                                             border = FALSE,
                                                             #icon = icon("user"),
                                                             #color = "yellow",
                                                             time = shiny::a("Miron et al.", href="https://onlinelibrary.wiley.com/doi/epdf/10.1002/ana.26893", target = '_blank'),
                                                ),
                                                timelineLabel(2024, color = "teal"),
-                                               timelineItem(title = "A user's guide for the International Classification of Cognitive Disorders in Epilepsy",
+                                               timelineItem(title = "Polygenic burden and its association with baseline cognitive function and postoperative cognitive outcome in temporal lobe epilepsy",
                                                             border = FALSE,
                                                             #icon = icon("user"),
                                                             #color = "yellow",
-                                                            time = shiny::a("Hermann et al.", href="https://pubmed.ncbi.nlm.nih.gov/39141394/", target = '_blank'),
+                                                            time = shiny::a("Arrotta et al.", href="https://pubmed.ncbi.nlm.nih.gov/38394790/", target = '_blank'),
                                                ),
                                                timelineLabel(2024, color = "teal"),
                                                timelineItem(title = "Validity of the MoCA as a cognitive screening tool in epilepsy: Are there implications for global care and research?",
@@ -650,6 +980,13 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                             time = shiny::a("Reyes et al.", href="https://pubmed.ncbi.nlm.nih.gov/38878272/", target = '_blank'),
                                                ),
                                                timelineLabel(2024, color = "teal"),
+                                               timelineItem(title = "A user's guide for the International Classification of Cognitive Disorders in Epilepsy",
+                                                            border = FALSE,
+                                                            #icon = icon("user"),
+                                                            #color = "yellow",
+                                                            time = shiny::a("Hermann et al.", href="https://pubmed.ncbi.nlm.nih.gov/39141394/", target = '_blank'),
+                                               ),
+                                               timelineLabel(2024, color = "teal"),
                                                timelineItem(title = "Cross-cultural application of the international classification of cognitive disorders in epilepsy cognitive phenotypes in people with temporal lobe epilepsy in India",
                                                             border = FALSE,
                                                             #icon = icon("user"),
@@ -657,11 +994,18 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                             time = shiny::a("Shah et al.", href="https://pubmed.ncbi.nlm.nih.gov/38878272/", target = '_blank'),
                                                ),
                                                timelineLabel(2023, color = "teal"),
-                                               timelineItem(title = "Development and application of the International Classification of Cognitive Disorders in Epilepsy (IC-CoDE): Initial results from a multi-center study of adults with temporal lobe epilepsy.",
+                                               timelineItem(title = "Association of neighborhood deprivation with cognitive and mood outcomes in adults with pharmacoresistant temporal lobe epilepsy.",
                                                             border = FALSE,
                                                             #icon = icon("user"),
                                                             #color = "yellow",
-                                                            time = shiny::a("McDonald et al.", href="https://pubmed.ncbi.nlm.nih.gov/35084879/", target = '_blank'),
+                                                            time = shiny::a("Busch et al.", href="https://pubmed.ncbi.nlm.nih.gov/37076308/", target = '_blank'),
+                                               ),
+                                               timelineLabel(2023, color = "teal"),
+                                               timelineItem(title = "The relationship between mood and anxiety and cognitive phenotypes in adults with pharmacoresistant temporal lobe epilepsy.",
+                                                            border = FALSE,
+                                                            #icon = icon("user"),
+                                                            #color = "yellow",
+                                                            time = shiny::a("Bingaman et al.", href="https://pubmed.ncbi.nlm.nih.gov/37814399/", target = '_blank'),
                                                ),
                                                timelineLabel(2023, color = "teal"),
                                                timelineItem(title = "Establishing the cross-cultural applicability of a harmonized approach to cognitive diagnostics in epilepsy: Initials results of the IC-CoDE in a Spanish-speaking sample.",
@@ -678,18 +1022,11 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                             time = shiny::a("Arrotta et al.", href="https://pubmed.ncbi.nlm.nih.gov/37866248/", target = '_blank'),
                                                ),
                                                timelineLabel(2023, color = "teal"),
-                                               timelineItem(title = "Association of neighborhood deprivation with cognitive and mood outcomes in adults with pharmacoresistant temporal lobe epilepsy.",
+                                               timelineItem(title = "Development and application of the International Classification of Cognitive Disorders in Epilepsy (IC-CoDE): Initial results from a multi-center study of adults with temporal lobe epilepsy.",
                                                             border = FALSE,
                                                             #icon = icon("user"),
                                                             #color = "yellow",
-                                                            time = shiny::a("Busch et al.", href="https://pubmed.ncbi.nlm.nih.gov/37076308/", target = '_blank'),
-                                               ),
-                                               timelineLabel(2023, color = "teal"),
-                                               timelineItem(title = "The relationship between mood and anxiety and cognitive phenotypes in adults with pharmacoresistant temporal lobe epilepsy.",
-                                                            border = FALSE,
-                                                            #icon = icon("user"),
-                                                            #color = "yellow",
-                                                            time = shiny::a("Bingaman et al.", href="https://pubmed.ncbi.nlm.nih.gov/37814399/", target = '_blank'),
+                                                            time = shiny::a("McDonald et al.", href="https://pubmed.ncbi.nlm.nih.gov/35084879/", target = '_blank'),
                                                ),
                                                timelineLabel(2021, color = "teal"),
                                                timelineItem(title = "Addressing neuropsychological diagnostics in adults with epilepsy: Introducing the International Classification of Cognitive Disorder in Epilepsy: The IC-Code Initiative.",
@@ -706,6 +1043,27 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                   box(width = 12,
                                       title = h2("Other Disorders", align = "center"),
                                       timelineBlock(reversed = FALSE, width = 12,
+                                                    timelineLabel(2025, color = "teal"),
+                                                    timelineItem(title = "Longitudinal Study of Cognitive Phenotypes in Patients with Relapsing-Remitting Multiple Sclerosis",
+                                                                 border = FALSE,
+                                                                 #icon = icon("user"),
+                                                                 #color = "yellow",
+                                                                 time = shiny::a("Sousa et al.", href="https://pubmed.ncbi.nlm.nih.gov/39964061/", target = '_blank'),
+                                                    ),
+                                                    timelineLabel(2025, color = "teal"),
+                                                    timelineItem(title = "Cognitive phenotypes in patients with relapsing-remitting multiple sclerosis with different disease duration, applying the international classification of cognitive disorders in MS (IC-CoDiMS)",
+                                                                 border = FALSE,
+                                                                 #icon = icon("user"),
+                                                                 #color = "yellow",
+                                                                 time = shiny::a("Sousa et al.", href="https://pubmed.ncbi.nlm.nih.gov/38715441/", target = '_blank'),
+                                                    ),
+                                                    timelineLabel(2024, color = "teal"),
+                                                    timelineItem(title = "Cognitive profile in multiple sclerosis and post-COVID condition: a comparative study using a unified taxonomy",
+                                                                 border = FALSE,
+                                                                 #icon = icon("user"),
+                                                                 #color = "yellow",
+                                                                 time = shiny::a("Delgado-Alonso et al.", href="https://pubmed.ncbi.nlm.nih.gov/39366169/", target = '_blank'),
+                                                    ),
                                                     timelineLabel(2024, color = "teal"),
                                                     timelineItem(title = "European cross-cultural neuropsychological test battery (CNTB) for the assessment of cognitive impairment in multiple sclerosis: Cognitive phenotyping and classification supported by machine learning techniques",
                                                                  border = FALSE,
@@ -739,6 +1097,20 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                          box(width = 12,
                                              title = h2("", align = "center"),
                                              timelineBlock(reversed = FALSE, width = 12,
+                                                           timelineLabel(2024, color = "teal"),
+                                                           timelineItem(title = "Hiding in plain sight – Neighborhood versus individual determinants of psychological outcomes in patients with epilepsy.",
+                                                                        border = FALSE,
+                                                                        #icon = icon("user"),
+                                                                        #color = "yellow",
+                                                                        time = shiny::a("Terman et al.", href="https://journals.sagepub.com/doi/full/10.1177/15357597231223588", target = '_blank'),
+                                                           ),
+                                                           timelineLabel(2024, color = "teal"),
+                                                           timelineItem(title = "Depression associated with worse cognitive phenotype in temporal lobe epilepsy.",
+                                                                        border = FALSE,
+                                                                        #icon = icon("user"),
+                                                                        #color = "yellow",
+                                                                        time = shiny::a("Physiciansweekly", href="https://www.physiciansweekly.com/depression-associated-with-worse-cognitive-phenotype-in-temporal-lobe-epilepsy/", target = '_blank'),
+                                                           ),
                                                            timelineLabel(2023, color = "teal"),
                                                            timelineItem(title = "Breaking the CoDE of cognitive disorders in epilepsy.",
                                                                         border = FALSE,
@@ -766,20 +1138,6 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                                                                         #icon = icon("user"),
                                                                         #color = "yellow",
                                                                         time = shiny::a("Sarkis et al.", href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10805095/", target = '_blank'),
-                                                           ),
-                                                           timelineLabel(2024, color = "teal"),
-                                                           timelineItem(title = "Hiding in plain sight – Neighborhood versus individual determinants of psychological outcomes in patients with epilepsy.",
-                                                                        border = FALSE,
-                                                                        #icon = icon("user"),
-                                                                        #color = "yellow",
-                                                                        time = shiny::a("Terman et al.", href="https://journals.sagepub.com/doi/full/10.1177/15357597231223588", target = '_blank'),
-                                                           ),
-                                                           timelineLabel(2024, color = "teal"),
-                                                           timelineItem(title = "Depression associated with worse cognitive phenotype in temporal lobe epilepsy.",
-                                                                        border = FALSE,
-                                                                        #icon = icon("user"),
-                                                                        #color = "yellow",
-                                                                        time = shiny::a("Physiciansweekly", href="https://www.physiciansweekly.com/depression-associated-with-worse-cognitive-phenotype-in-temporal-lobe-epilepsy/", target = '_blank'),
                                                            )
                                              )#close time block 
                                   )
@@ -793,14 +1151,27 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
         
         #About Panel ####
         tabPanel("About", value = "abouttab",
-                 div(style = "margin: 5% 10%; text-align:justify; max-width:1100px;",   # This will create margins on top/bottom and left/right
+                 div(style = "margin: 5% 10%; text-align:justify; max-width:1400px;",   # This will create margins on top/bottom and left/right
                      
                      h2(HTML("<u> The International Classification of Cognitive Disorders in Epilepsy (IC-CoDE) </u>"), style = "margin-bottom: 30px;"),  
                      br(),
                      p(h4(HTML("The IC-CoDE represents a consensus-based, empirically-driven approach to diagnosing cognitive disorders in adults with epilepsy. It was developed in 2020 through a memorandum of understanding (MOU) between the International League Against Epilepsy (ILAE) Neuropsychology Task force and the International Neuropsychological Society (INS). The main goal of the IC-CoDE is to accelerate global research in the neuropsychology of epilepsy by providing an internationally-applicable framework for cognitive diagnostics in epilepsy with clear operational criteria and established impairment cut-offs. The IC-CoDE was developed as a guide for harmonizing multi-site cognitive research in epilepsy. It has not been validated as a diagnostic tool for individual patients in clinical settings.
                                <br>
                                <br>
-                               The IC-CoDE framework was originally tested in a large, multicenter cohort of 2,485 adults with temporal lobe epilepsy and subsequently in a multicenter cohort of 455 with frontal lobe epilepsy. The IC-CoDE is now currently being tested in youth with epilepsy and in adults at international sites. IC-CoDE has not yet been applied to other epilepsy syndromes (e.g., juvenile myoclonic epilepsy, absence seizures). IC-CoDE has also been modified and applied to several other disorders outside of epilepsy (e.g., multiple sclerosis, COVID-19).  A list of published studies that have used IC-CoDE is provided under the Publications tab above.")))
+                               The IC-CoDE framework was originally tested in a large, multicenter cohort of 2,485 adults with temporal lobe epilepsy and subsequently in a multicenter cohort of 455 with frontal lobe epilepsy. The IC-CoDE is now currently being tested in youth with epilepsy and in adults at international sites. IC-CoDE has not yet been applied to other epilepsy syndromes (e.g., juvenile myoclonic epilepsy, absence seizures). IC-CoDE has also been modified and applied to several other disorders outside of epilepsy (e.g., multiple sclerosis, COVID-19).  A list of published studies that have used IC-CoDE is provided under the Publications tab above."))),
+                     h2(HTML("<u> Initial Considerations for IC-CoDE Users </u>"), style = "margin-bottom: 30px;"), 
+                     h4(HTML("The goal of the IC-CoDE is to apply the cognitive model (Figure 1) using the operational definitions provided in order to arrive at a diagnostic cognitive phenotype (Figure 2). Step-by-step instructions for using the IC-CoDE calculator are provided below. For more information refer to Norman et al., 2021, <i>Epilepsia</i>, McDonald et al., 2023, <i>Neuropsychology</i>, and Hermann et al., 2024, <i>Epileptic Disorders</i>.")),
+                     br(),
+                     HTML('<img src="GuidelineFigure1.jpeg" alt="Your Image" width="500", max-height="300" />'),
+                     HTML('<img src="GuidelineFigure2.jpeg" alt="Your Image" width="860", max-height="300" />'),
+                     br(),
+                     br(),
+                     h2(HTML("<u>Funding</u>"), style = "margin-bottom: 30px;"), 
+                     h4(HTML("Funding for development of the IC-CoDE Portal was provided by an American Epilepsy Society Infrastructure Award (Award ID 1153665).")),
+                     h2(HTML("<u>Privacy policy</u>"), style = "margin-bottom: 30px;"), 
+                     p(h4("We value your privacy. The full policy is available ",
+                       actionLink("privacy_link_about", "here"), ". "
+                     ))
                  )
         ),
         
@@ -810,6 +1181,14 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                div(style = "margin: 5% 10%;text-align:justify; max-width:1100px;",   # This will create margins on top/bottom and left/right
                      
                      h2(HTML("<u> Frequently Asked Questions </u>"), style = "margin-bottom: 30px;"), 
+                   
+                   h4(HTML("<b>How to cite the IC-CODE Portal</b>
+                             <br>
+                             <br>
+                             When publishing manuscripts that make use of the IC-CoDE portal to generate phenotype data, we ask that you please include an acknowledgement. We recommend the following boilerplate language: IC-CoDE phenotype data were generated using the IC-CoDE Portal (IC-CoDE-Portal.ccf.org), which was funded by an American Epilepsy Society Infrastructure Grant (Award ID 1153665).
+
+                             <br>
+                             <br>")),
                      
                      h4(HTML("<b>Can the IC-CoDE calculator be used for clinical purposes?</b>
                              <br>
@@ -826,7 +1205,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                              <br>
                              <br>")),
                    
-                   h4(HTML("<b> Can IC-CoDE calculator be used if patients in your sample completed a different version of the same test (e.g., CVLT, CVLT-2)?</b>
+                   h4(HTML("<b> Can the IC-CoDE calculator be used if patients in your sample completed a different version of the same test (e.g., CVLT, CVLT-2)?</b>
                              <br>
                              <br>
                 The IC-CoDE is not a test-specific taxonomy; thus, different versions of the same test can be used interchangeably. However, research is ongoing to better understand the influence different tests and test versions may have on IC-CoDE phenotypes. 
@@ -850,14 +1229,14 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                    h4(HTML("<b>How many cognitive domains are required to generate IC-CoDE phenotypes?  </b>
                              <br>
                              <br>
-                Ideally, two cognitive measures from all 5 cognitive domains (i.e., language, memory, executive, visuospatial, attention/speed) should be used when generating IC-CoDE phenotypes. However, in instances where there were not enough measures administered within each domain, it may be possible to generate an IC-CoDE phenotype with only 4 cognitive domains. However, careful consideration should be given to the patient population of interest to ensure that an “essential” cognitive domain is not omitted (i.e., domains known to have a high base rate of impairment in that population). For example, memory and language would be considered essential domains in temporal lobe epilepsy and visuospatial would be considered an essential domain for parietal lobe epilepsy.  We do not recommend generating IC-CoDE phenotypes in any patient with fewer than 4 cognitive domains.
+                Ideally, at least two cognitive measures from all 5 cognitive domains (i.e., language, memory, executive, visuospatial, attention/speed) should be used when generating IC-CoDE phenotypes. However, in instances where there were not enough measures administered within each domain, it may be possible to generate an IC-CoDE phenotype with only 4 cognitive domains. However, careful consideration should be given to the patient population of interest to ensure that an “essential” cognitive domain is not omitted (i.e., domains known to have a high base rate of impairment in that population). For example, memory and language would be considered essential domains in temporal lobe epilepsy and visuospatial would be considered an essential domain for parietal lobe epilepsy.  We do not recommend generating IC-CoDE phenotypes in any patient with fewer than 4 cognitive domains.
                              <br>
                              <br>")),
                    
                    h4(HTML("<b> Can the IC-CoDE calculator be applied to patient populations outside of the United States? </b>
                              <br>
                              <br>
-                The IC-CoDE has been tested with temporal lobe epilepsy patients in Mumbai, India where there is considerable language and cultural diversity. The findings were presented at the International Neuropsychological Society 2023 Annual Meeting and will soon be submitted for publication. We are currently working with other research groups in South Africa and Japan, who are validating the IC-CoDE in their local samples. 
+                The IC-CoDE has been tested with temporal lobe epilepsy patients in Mumbai, India where there is considerable language and cultural diversity. The findings were published in Shah et al., 2024. Epilepsia. We are currently working with other research groups in South Africa and Japan, who are validating the IC-CoDE in their local samples. 
                              <br>
                              <br>")),
                    
@@ -885,7 +1264,7 @@ Note: Ideally, cognitive measures from all 5 cognitive domains should be used wh
                    h4(HTML("<b>Is IC-CoDE technical assistance available?</b>
                              <br>
                              <br>
-                Technical assistance is not currently available, but a brief video tutorial has been provided to aid the user in navigating the IC-CoDE portal and calculator. 
+                Technical assistance is not currently available, but detailed instructions are provided under the “Instructions for Use” tab above to aid the user in navigating the IC-CoDE portal and calculator. 
                              <br>
                              <br>")),
                    
