@@ -150,11 +150,14 @@ z_to_standard <- function(z_score) {
 }
 
 percentile_to_standard <- function(percentile_score) {
-
-  z_score <- qnorm(percentile_score / 100)
   
-  # Convert the Z-score to a standard score
-  return((z_score * 15) + 100)
+  percentile_score <- as.numeric(percentile_score)
+
+  ifelse(
+    is.na(percentile_score),
+    NA_real_,
+    (qnorm(percentile_score / 100) * 15) + 100
+  )
 }
 
 
@@ -1613,6 +1616,16 @@ shinyServer(function(input, output, session) { ##### SERVER #####
     accepted_columns <- c("StudyID", colnames(uploaded_table)[colnames(uploaded_table) %>% str_detect(., ":")], colnames(uploaded_table)[colnames(uploaded_table) %>% str_detect(., "Filter")])
     uploaded_table <- uploaded_table %>% select(any_of(accepted_columns))
     uploaded_table <- uploaded_table %>% slice(which(rowSums(!is.na(uploaded_table)) > 1))
+    
+    # add fake study ID if missing 
+    if(any(colnames(uploaded_table) == "StudyID")){
+      #do nothing all good 
+    } else{
+      # add Study ID numeric 
+      uploaded_table <- uploaded_table %>% 
+        mutate(StudyID = 1:nrow(.))
+    }
+    
     
     # Without StudyID and mood
     workingtable <- uploaded_table %>% select(-StudyID, -any_of(which(str_detect(colnames(uploaded_table), "MOOD :"))), -any_of(which(str_detect(colnames(uploaded_table), "Filter_"))))

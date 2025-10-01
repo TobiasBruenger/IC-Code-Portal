@@ -1,3 +1,0 @@
-t <- read_delim("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/Sodium_Channel_Portal/Data_analysis/Genome_biology_2025/Datasets/Variants/Unprocessed/gnomad_Gary_current.txt", delim = "\t")
-
-t

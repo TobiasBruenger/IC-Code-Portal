@@ -1,0 +1,31 @@
+pat <- read_delim("C:/Users/tbrunger/Downloads/kcnq2portal_09202025/kcnq2portal/data/Patient_variants.txt")
+
+
+master.df <- read_delim("C:/Users/tbrunger/Downloads/kcnq2portal_09202025/kcnq2portal/data/KCNQ2_master_091125.txt") 
+
+
+#
+
+pat %>% 
+  filter(Transcript == "NM_172107") %>% 
+  filter(Vartype == "Missense") %>% 
+  left_join(master.df %>% select(AA_pos,AA_ref,AA_alt,cDNA_pos,cDNA_alt,Tested_effect) %>% distinct()) %>% 
+  filter(!is.na(Tested_effect)) %>% 
+  group_by(AA_pos,AA_ref,AA_alt) %>% 
+  summarise(n = n())
+
+
+#281
+#122
+
+master.df %>% 
+  filter(Transcript == "NM_172107",
+         AA_pos == 281) #%>% pull(Domain)
+
+
+pat %>% 
+  filter(Transcript == "NM_172107") %>% 
+  filter(Vartype == "Missense") %>% 
+  left_join(master.df %>% select(AA_pos,AA_ref,AA_alt,cDNA_pos,cDNA_alt,Domain) %>% distinct()) %>% 
+  pull(Domain) %>% 
+  table() %>% sort()
