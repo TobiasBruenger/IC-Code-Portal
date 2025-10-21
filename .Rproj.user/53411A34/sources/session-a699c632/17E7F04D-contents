@@ -123,7 +123,7 @@ shinyUI(
                          h4(tags$b("Step 1: Set Parameters")),
                          # Main bullets = disc; sub-bullets = circle (to match the template)
                          tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
-                                 tags$li(HTML('Select the <b>“Individual”</b> tab')),
+                                 tags$li(HTML('Click the <b>“Individual”</b> tab')),
                                  tags$li(
                                    tagList(
                                      HTML('<b>Cutoff Selection:</b> Choose 1, 1.5, and/or 2 SD below the normative mean to define cognitive impairment.'),
@@ -136,7 +136,7 @@ shinyUI(
                                    tagList(
                                      HTML('<b>Default Score Scale:</b> Choose from:'),
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
-                                             tags$li('Standard score, T-score, z-score, scaled score, or percentile.'),
+                                             tags$li('Standard score, scaled score, T-score, z-score, or percentile.'),
                                              tags$li(HTML('<i>Note:</i> This is only the default — you can change it per test.'))
                                      )
                                    )
@@ -165,8 +165,8 @@ shinyUI(
                                      tags$b("Language"),
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                              tags$li(HTML("<b>Subdomains:</b> Naming, Fluency")),
-                                             tags$li(HTML("Example Tests: Boston Naming Test, Letter/Category Fluency, etc.")),
-                                             tags$li(HTML("Enter the test name, score, and the scale on which the test score is provided for this and all other domains.")),
+                                             tags$li(HTML("Example Tests: Boston Naming Test, Category Fluency, etc.")),
+                                             tags$li(HTML("Enter the test name, score, and scale on which the test score is provided for this and all other domains.")),
                                              tags$li(HTML("<i>Note:</i> The test names provided are commonly used measures. If you do not use these measures, you may leave them blank or type over them to include the names of the tests you have available.")),
                                              tags$li(HTML("<i>Note:</i> The specific test and test version used does not matter. The calculator will work for any test that you enter into the Measure field."))
                                      )
@@ -180,10 +180,11 @@ shinyUI(
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                              tags$li(HTML("<b>Subdomains:</b> Word List Recall, Story Recall, Word Pair Recall, Design Recall")),
                                              tags$li(HTML("Example Tests: CVLT, Logical Memory, BVMT, etc.")),
-                                             tags$li(HTML("<i>Tip:</i> Make sure the score scale matches the data (e.g., T-score, z-score, scaled score)."))
+                                             tags$li(HTML("<i>Tip:</i> Make sure the score scale matches the data (e.g., T-score, z-score, scale score)."))
                                      )
                                    )
                                  ),
+                                 
                                  
                                  # Executive Function
                                  tags$li(
@@ -191,7 +192,7 @@ shinyUI(
                                      tags$b("Executive Function"),
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                              tags$li(HTML("<b>Subdomains:</b> Set-Shifting, Problem-Solving, Response Inhibition")),
-                                             tags$li(HTML("Example tests: Trail Making Test Part B, WCST")),
+                                             tags$li(HTML("Example Tests: Trail Making Test Part B, WCST")),
                                              tags$li(HTML("<i>Tip:</i> When possible, use scores from different measures within the same domain (e.g., Trail Making Test – Part B, WCST Perseverative Errors) rather than two scores from a single measure (e.g., WCST perseverative errors and conceptual level responses)."))
                                      )
                                    )
@@ -202,7 +203,7 @@ shinyUI(
                                    tagList(
                                      tags$b("Attention/Processing Speed"),
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
-                                             tags$li(HTML("<b>Subdomains:</b> Attention/Working Memory, Processing Speed")),
+                                             tags$li(HTML("<b>Subdomains:</b> Attention, Processing Speed")),
                                              tags$li(HTML("Example Tests: Digit Span, Trail Making Test Part A, Coding")),
                                              tags$li(HTML("<i>Tip:</i> Make sure the score scale matches your source (e.g., scaled scores from WAIS subtests, T-scores from Trail Making Test)."))
                                      )
@@ -215,7 +216,7 @@ shinyUI(
                                      tags$b("Visuospatial"),
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                              tags$li(HTML("<b>Subdomains:</b> Visuoconstruction, Visuoperception")),
-                                             tags$li(HTML("Example Tests: Block Design, <u>Judgment of Line Orientation</u>")),
+                                             tags$li(HTML("Example Tests: Block Design, Judgment of Line Orientation")),
                                              tags$li(HTML("<i>Tip:</i> Adjust the scale type and include the relevant scores."))
                                      )
                                    )
@@ -258,14 +259,15 @@ shinyUI(
                                       tags$li(HTML("Scroll back up and <b>review all entries.</b>")),
                                       tags$li(HTML("Make sure at <b>least two tests per domain</b> are included in at <b>least four domains.</b>")),
                                       tags$li(HTML('Click <b>"Submit Entries"</b>.')),
-                                      tags$li(HTML('The IC-CoDE system will display:'),
-                                              tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
-                                                      tags$li("Cutoff(s) used"),
-                                                      tags$li("Overall phenotype (e.g., Generalized, Bi-Domain Impairment)"),
-                                                      tags$li("Domains impaired"),
-                                                      tags$li("Any selected modifiers"),
-                                                      tags$li("Tests included in the phenotype calculation")
-                                              )
+                                      tags$li(
+                                        HTML('The IC Code system will display:'),
+                                        tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
+                                                tags$li("Cutoff(s) used"),
+                                                tags$li("Overall phenotype (e.g., Generalized, Bi-Domain Impairment)"),
+                                                tags$li("Domains impaired"),
+                                                tags$li("Any selected modifiers"),
+                                                tags$li("Tests included in the phenotype calculation")
+                                        )
                                       ),
                                       tags$li(HTML("You may download <b>results</b> or <b>reset</b> to enter a new patient/participant."))
                               )
@@ -331,22 +333,22 @@ shinyUI(
                        column(6,
                               h4(tags$b("Step 2: Create Group Template")),
                               tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
-                                      tags$li(HTML('Under the <b>Group</b> tab, click <b>"Create Template"</b>.')),
-                                      tags$li("As described above for Individual Data, for each cognitive domain:"),
+                                      tags$li(HTML('Under the <b>Group</b> tab, click <b>Create Template.</b>')),
+                                      tags$li(HTML('As described above under the <b>Individual Data</b> instructions, for each cognitive domain:')),
                                       tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                               tags$li(HTML("Select or enter <b>all tests</b> in your battery.")),
                                               tags$li(HTML("Set the correct <b>score scale</b> (T-score, z-score, scaled score).")),
-                                              tags$li('Place a check in the "Include" box for all tests you want included in the cognitive phenotype generation.'),
-                                              tags$li(HTML("If your test is not listed, <b>type it in</b>.")),
+                                              tags$li(HTML('Place a check in the “Include” box for all tests you want included in the cognitive phenotype generation.')),
+                                              tags$li(HTML("If your test is not listed, <b>type it in</b>."))
                                       ),
-                                      tags$li(HTML("Include <b>at least two tests per domain in at least four domains</b>.")),
-                                      tags$li(HTML('<b>Enter Filters (optional)</b>')),
+                                      tags$li(HTML("Include <b>at least two tests per domain in at least four domains.</b>")),
+                                      tags$li(HTML("<b>Enter Filters (optional).</b>")),
                                       tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
-                                              tags$li(HTML('<i>Note:</i> You can use the provided filters or enter others (type over existing names). Check the "Include" box for any filters you want included.')),
-                                      ), 
-                                      tags$li(HTML('Once complete, click <b>"Download Group Table Template"</b>.'))
+                                              tags$li(HTML('<i>Note:</i> You can use any of the provided filters or enter other filters of your own (simply type over the existing filter names). Be sure to check the “Include” box for any filters you want included in your dataset.'))
+                                      ),
+                                      tags$li(HTML('Once complete, click <b>Download Group Table Template.</b>'))
                               ),
-                              p(HTML('<i>General Tip:</i> It is recommended that users include tests of different types within a domain whenever possible (e.g., naming and fluency rather than two fluency tasks).')),
+                              p(HTML('<i>General Tip:</i> It is recommended that users include tests of different types within a domain whenever possible (e.g., naming and fluency tasks rather than two fluency tasks in the Language domain).'))
                        ),
                        column(6, align = "center",
                               tags$img(src = "instructions_group_2.png", 
@@ -365,13 +367,12 @@ shinyUI(
                                       tags$li("Enter data:"),
                                       tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                               tags$li(HTML("<b>Each row = one participant.</b>")),
-                                              tags$li(HTML("<b>Each column = one test.</b>")),
+                                              tags$li(HTML("<b>Each column = one test.</b>"))
                                       ),
-                                      tags$li("Match scores to correct formats (e.g., scaled scores for WAIS subtests)."),
+                                      tags$li("Match scores to correct formats (e.g., scaled scores for WAIS subtests).")
                               ),
                               p(HTML('<i>General Note:</i> Do <u><b>not</b></u> modify the variable names in row 1 of the spreadsheet. These are required for the phenotype calculations to run correctly.')),
-                              p(HTML('<i>General Note:</i> Some test scores entered may appear in <b style="color:red;">RED</b> to indicate a possible entry or scale mismatch. This is a prompt to check for errors; the calculator will still work if these warnings are present.'))
-                              
+                              p(HTML('<i>General Note:</i> Some test scores entered may appear in <b style="color:red;">RED font</b> to indicate that a score may have been entered incorrectly or that the score entered may not match the scale selected for that score (e.g., standard score entered where there should be a scaled score). This is simply a prompt to check for errors; the calculator will still work if these warnings are present in a file uploaded to the calculator.'))
                        )
                      ),
                      
@@ -382,13 +383,13 @@ shinyUI(
                        column(6,
                               h4(tags$b("Step 4: Upload and Generate Results")),
                               tags$ul(style = "list-style-type: disc; padding-left: 20px; margin-left: 0;",
-                                      tags$li(HTML('Return to IC-CoDE Portal → <b>Group tab.</b>')),
-                                      tags$li(HTML('Click <b>"Upload Data and Generate Results"</b>.')),
+                                      tags$li(HTML('Return to IC Code Portal → <b>Group tab.</b>')),
+                                      tags$li(HTML('Click <b>“Upload Data and Generate Results.”</b>')),
                                       tags$li(HTML("Use <b>Browse</b> to select your completed template file.")),
                                       tags$li("Results will include:"),
                                       tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
-                                              tags$li("Display results as pie chart(s) showing IC-CoDE phenotype distributions with hover details for single and bi-domain slices."),
-                                              tags$li("Options to visualize by desired filters (e.g., sex, side of seizures)."),
+                                              tags$li(HTML("Display results presented as pie chart(s) showing IC Code phenotype distribution(s) — if you hover over the single domain or bi-domain slices, you can see a breakdown of impaired domains.")),
+                                              tags$li(HTML("Option to visualize pie charts by desired filters (e.g., sex, side of seizures).")),
                                               tags$li(HTML("Option to <b>download</b> the results in a spreadsheet format."))
                                       )
                               )
@@ -610,7 +611,7 @@ shinyUI(
                                       uiOutput("attention_processing_speed_warning_ui"),
 
                                       column(12,# offset = 1,
-                                             actionLink(inputId = "a_btn", label = "Attention / Working Memory (+)", class = "custom-action-link"),
+                                             actionLink(inputId = "a_btn", label = "Attention (+)", class = "custom-action-link"),
                                              hidden(div(id = "a_content", uiOutput("a_content_ui"))),
                                              br(),
                                              actionLink(inputId = "pro_s_btn", label = "Processing Speed (+)", class = "custom-action-link"),
@@ -854,7 +855,7 @@ shinyUI(
                                     uiOutput("attention_processing_speed_warning_ui_MG"),
                                     
                                     column(12,
-                                           actionLink(inputId = "a_btn_MG", label = "Attention / Working Memory (+)", class = "custom-action-link"),
+                                           actionLink(inputId = "a_btn_MG", label = "Attention (+)", class = "custom-action-link"),
                                            hidden(div(id = "attention___working_memory_content_MG", uiOutput("attention___working_memory_content_ui_MG"))),
                                            br(),
                                            actionLink(inputId = "pro_s_btn_MG", label = "Processing Speed (+)", class = "custom-action-link"),
@@ -897,7 +898,7 @@ shinyUI(
                                     column(8, align = "left",         
                                            div(style = "margin-top: 40px; margin-bottom: 20px;",
                                                #hidden(div(id = "output_content", uiOutput("results"))),
-                                               h4("Download your Excel data template (Note: The website does save your Excel data template for future use, so please be sure to download and save it elsewhere until it is completed and ready to upload for analysis)."),
+                                               h4("Download your Excel data template (Note: The website does NOT save your Excel data template for future use, so please be sure to download and save it elsewhere until it is completed and ready to upload for analysis)."),
                                                downloadButton("download_table", "Download group table template"),
                                            )
                                     ),
@@ -958,6 +959,20 @@ shinyUI(
                              box(width = 12,
                                  title = h2("Epilepsy", align = "center"),
                                  timelineBlock(reversed = FALSE, width = 12,
+                                               timelineLabel(2025, color = "teal"),
+                                               timelineItem(title = "Application of the International Classification of Cognitive Disorders in Epilepsy (IC-CoDE) to youths with drug-resistant epilepsy",
+                                                            border = FALSE,
+                                                            #icon = icon("user"),
+                                                            #color = "yellow",
+                                                            time = shiny::a("Ferguson et al.", href="https://pubmed.ncbi.nlm.nih.gov/40737958/", target = '_blank'),
+                                               ),
+                                               timelineLabel(2025, color = "teal"),
+                                               timelineItem(title = "Application of the International Classification of Cognitive Disorders in Epilepsy (IC-CoDE) to youths with new and recent onset epilepsies",
+                                                            border = FALSE,
+                                                            #icon = icon("user"),
+                                                            #color = "yellow",
+                                                            time = shiny::a("Almane et al.", href="https://pubmed.ncbi.nlm.nih.gov/40700775/", target = '_blank'),
+                                               ),
                                                timelineLabel(2024, color = "teal"),
                                                timelineItem(title = "Cortical Thickness Patterns of Cognitive Impairment Phenotypes in Drug-ResistantTemporal Lobe Epilepsy",
                                                             border = FALSE,
@@ -1215,7 +1230,9 @@ shinyUI(
                    h4(HTML("<b> Can the IC-CoDE calculator be used in children with epilepsy?</b>
                              <br>
                              <br>
-                The IC-CoDE calculator has recently been applied to children with new and recent onset idiopathic epilepsies as well as to those with pharmacoresistant focal epilepsies. Study findings have been presented at scientific meetings and have been submitted for publication. References will be provided under the “Publications” tab above as soon as they are available. 
+                Yes!  The IC-CoDE calculator can easily be applied to children by simply entering data for pediatric measures. The default measures provided in the calculator are only examples. The user can replace these default measures with any measure they would like.  For example, under naming, they could replace the Boston Naming Test with the Expressive One Word Vocabulary Test if they have that measure of naming for a child they assessed. Similarly, under Attention, they could replace the WAIS Digit Span score with the WISC or WPPSI Digit Span score or any other measure of attention in their pediatric battery. 
+                             <br>
+                             The IC-CoDE has recently been applied to children with new and recent onset idiopathic epilepsies as well as to those with pharmacoresistant focal epilepsies. These findings were recently published, and the references can be found under the “Publications” tab. 
                              <br>
                              <br>")),
                    
@@ -1236,7 +1253,9 @@ shinyUI(
                    h4(HTML("<b> Can the IC-CoDE calculator be applied to patient populations outside of the United States? </b>
                              <br>
                              <br>
-                The IC-CoDE has been tested with temporal lobe epilepsy patients in Mumbai, India where there is considerable language and cultural diversity. The findings were published in Shah et al., 2024. Epilepsia. We are currently working with other research groups in South Africa and Japan, who are validating the IC-CoDE in their local samples. 
+                Yes! The IC-CoDE calculator can be applied to patient populations in other regions and to patients who were assessed in other languages. The default measures provided in the calculator are only examples. The user can replace these default measures with any measure they would like.  For example, under naming, they could replace the Boston Naming Test with whatever measure they used to assess naming in whatever region or language the patient was evaluated. Similarly, under Attention, they could replace the WAIS Digit Span score with whatever measure they used to assess attention in their neuropsychological battery.
+                             <br>
+                             To date, the IC-CoDE has been tested with temporal lobe epilepsy patients in Mumbai, India where there is considerable language and cultural diversity. The findings were published in Shah et al., 2024. Epilepsia. We are currently working with other research groups in South Africa and Japan, who are validating the IC-CoDE in their local samples.
                              <br>
                              <br>")),
                    

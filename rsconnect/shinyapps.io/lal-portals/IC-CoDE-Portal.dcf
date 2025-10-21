@@ -5,6 +5,6 @@ account: lal-portals
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10321087
-bundleId: 10940121
+bundleId: 11062826
 url: https://lal-portals.shinyapps.io/IC-CoDE-Portal/
 version: 1

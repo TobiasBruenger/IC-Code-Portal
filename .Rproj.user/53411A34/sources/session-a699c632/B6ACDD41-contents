@@ -38,7 +38,7 @@ all_tests <- list(
     # Add other Naming test names here
   ),
   Fluency = c(
-    "Letter Fluency", "Category Fluency", "Other Fluency", "Other Fluency2", "Other Fluency3"
+    "Category Fluency", "Other Fluency", "Other Fluency2", "Other Fluency3"
     # Add other test names for Category2 here
   ),
   `Word List Delayed Recall` = c(
@@ -62,8 +62,8 @@ all_tests <- list(
   `Response Inhibition` = c(
     "Stroop Color-Word Interference", "DKEFS Color-Word Inhibition Switching", "Other response inhibiton", "Other response inhibiton2", "Other response inhibiton3"
   ),
-  `Attention / Working Memory` = c(
-    "WAIS Digit Span Total or Forward", "WMS Spatial Span Total or Forward", "Ruff 2 and 7", "WAIS Letter-Number Sequencing", "WAIS Arithmetic", "Other attention", "Other attention2", "Other attention3"
+  `Attention` = c(
+    "WAIS Digit Span Total or Forward", "WMS Spatial Span Total or Forward", "Ruff 2 and 7", "Other attention", "Other attention2", "Other attention3"
   ),
   `Processing Speed` = c(
     "Trail Making Test – Part A", "DKEFS Trail Making Test – Number Sequencing Subtest or Letter Sequencing Subtest", "WAIS Coding", "WAIS Symbol Search", "Symbol Digit Modalities Test", "DKEFS Color-Word Naming", "Other processing speed", "Other processing speed2", "Other processing speed3"
@@ -72,7 +72,7 @@ all_tests <- list(
     "WAIS Block Design", "WMS Visual Reproduction Copy", "Complex Figure Copy", "Other visuoconstrauction", "Other visuoconstrauction2", "Other visuoconstrauction3"
   ),
   `Visuoperception` = c(
-    "Judgment of Line Orientation", "WAIS Visual Puzzles", "Hooper Visual Organization Test", "Facial Recognition Test", "WAIS Matrix Reasoning", "Other Visuoperception", "Other Visuoperception2", "Other Visuoperception3"
+    "Judgment of Line Orientation", "Hooper Visual Organization Test", "Facial Recognition Test", "Other Visuoperception", "Other Visuoperception2", "Other Visuoperception3"
   )
   # Add more categories and test names as needed
 )
@@ -518,7 +518,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
     "Problem-Solving" = "EXECUTIVE_FUNCTION",
     "Response Inhibition" = "EXECUTIVE_FUNCTION",
     "ATTENTION / PROCESSING SPEED" = "ATTENTION_PROCESSING_SPEED",
-    "Attention / Working Memory" = "ATTENTION_PROCESSING_SPEED",
+    "Attention" = "ATTENTION_PROCESSING_SPEED",
     "Processing Speed" = "ATTENTION_PROCESSING_SPEED",
     "VISUOSPATIAL" = "VISUOSPATIAL",
     "Visuoconstruction" = "VISUOSPATIAL",
@@ -628,7 +628,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
      "Set-Shifting" = "ss_btn",
      "Problem-Solving" = "ps_btn",
      "Response Inhibition" = "ri_btn",
-     "Attention / Working Memory" = "a_btn",
+     "Attention" = "a_btn",
      "Processing Speed" = "pro_s_btn",
      "Visuoconstruction" = "vc_btn",
      "Visuoperception" = "vp_btn"
@@ -1140,7 +1140,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
         Language = c("Naming", "Fluency"),
         Memory = c("Word List Delayed Recall", "Story/Prose Delayed Recall", "Word Pair Delayed Recall", "Design Delayed Recall"),
         ExecutiveFunction = c("Set-Shifting", "Problem-Solving", "Response Inhibition"),
-        AttentionProcessing = c("Attention / Working Memory", "Processing Speed"),
+        AttentionProcessing = c("Attention", "Processing Speed"),
         Visuospatial = c("Visuoconstruction", "Visuoperception")
       )
       
