@@ -1108,10 +1108,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
   }
   
   is_evaluated <- function(test_name) {
-    print(test_name)
-    print(paste0(test_name, "_value"))
     raw <- values[[paste0(test_name, "_value")]]
-    print(raw)
     num <- as.numeric(raw)
     out <- !is.null(num) && length(num) == 1 && !is.na(num)
     return(out)
@@ -1865,6 +1862,15 @@ shinyServer(function(input, output, session) { ##### SERVER #####
             "Visuospatial Domain"
           )
           
+          display_names <- c(
+            "Language",
+            "Memory",
+            "Executive",
+            "Attention/Processing Speed",
+            "Visuospatial"
+          )
+          names(display_names) <- domain_columns
+          
           df_summary <- df %>%
             group_by(Phenotype) %>%
             summarise(
@@ -1873,7 +1879,26 @@ shinyServer(function(input, output, session) { ##### SERVER #####
             ) %>%
             ungroup() %>%
             filter(!Phenotype %in% c("Data not provided", "Not sufficient domains assessed"))
-
+          
+          bi_pairs <- df %>%
+            filter(Phenotype == "Bi-domain") %>%
+            mutate(
+              impaired = pmap(select(., all_of(domain_columns)), ~ c(...)),
+              impaired = map(impaired, ~ domain_columns[.x == "impaired"])
+            ) %>%
+            # each bi-domain case contributes one pair
+            mutate(pair = map_chr(impaired, ~ paste(sort(.x)[1:2], collapse = "|"))) %>%
+            count(pair) %>%
+            mutate(pct = round(100 * n / sum(n))) %>%
+            mutate(text = paste0(
+              pct, "% ",
+              pair %>%
+                str_replace("\\|", "/") %>%
+                str_replace_all(display_names)
+            )) %>%
+            summarise(text = paste(text, collapse = "\n")) %>%
+            mutate(Phenotype = "Bi-domain")
+          
           # Adjust color panel
           color_panel <- c(
             "Bi-domain" = "#00545e",
@@ -1886,21 +1911,25 @@ shinyServer(function(input, output, session) { ##### SERVER #####
           
           # Add text including both number of individuals and percentage impairments
           df_summary <- df_summary %>%
+            left_join(bi_pairs, by = "Phenotype") %>%
             rowwise() %>%
             mutate(
-              text_info = paste0(
-                "Number of individuals: ", `Number of individuals`, "\n",
-                round(`Language Domain_imp_percent`), "% Language Domain\n",
-                round(`Memory Domain_imp_percent`), "% Memory Domain\n",
-                round(`Executive Function Domain_imp_percent`), "% Executive Domain\n",
-                round(`Attention/Processing Speed Domain_imp_percent`), "% Attention/Processing Speed Domain\n",
-                round(`Visuospatial Domain_imp_percent`), "% Visuospatial Domain"
-              ),
-              text_info_simp = paste0(
-                "Number of individuals: ", `Number of individuals`, "\n"
+              text_info = case_when(
+                Phenotype == "Bi-domain" ~ paste0(
+                  "Number of individuals: ", `Number of individuals`, "\n", text
+                ),
+                Phenotype == "Single Domain" ~ paste0(
+                  "Number of individuals: ", `Number of individuals`, "\n",
+                  round(`Language Domain_imp_percent`), "% Language Domain\n",
+                  round(`Memory Domain_imp_percent`), "% Memory Domain\n",
+                  round(`Executive Function Domain_imp_percent`), "% Executive Domain\n",
+                  round(`Attention/Processing Speed Domain_imp_percent`), "% Attention/Processing Speed Domain\n",
+                  round(`Visuospatial Domain_imp_percent`), "% Visuospatial Domain"
+                ),
+                TRUE ~ paste0("Number of individuals: ", `Number of individuals`)
               )
-            ) %>% 
-            mutate(text_info = ifelse(Phenotype %in% c("Single Domain","Bi-domain"),text_info,text_info_simp))
+            ) %>%
+            ungroup()
           
           # Create the pie chart
           plot_ly(

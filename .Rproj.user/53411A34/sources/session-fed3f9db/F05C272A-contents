@@ -1,0 +1,183 @@
+library(tidyverse)
+
+
+# Create data master file ####
+# Load SFARI annotations
+# Old v12 files
+# sfari_master <- read_delim("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/SFARI/SFARI_Portal/data/master_ssl.txt", delim = "\t") %>% 
+#   select(1,sex,gene_group,Vartype, Classification_final,has_potential_confound) %>% 
+#   mutate(Vartype = case_when(Vartype == "Missense"~"Missense",
+#                              Vartype == "PTV"~"PTV",
+#                              Vartype == "Splice site"~"Other/Unknown",
+#                              Vartype == "CNV"~"Other/Unknown",
+#                              T~"Other/Unknown"))
+# 
+# # Load missing sfari ids descriptions
+# additional_ids <- read_csv("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/SFARI/Simons_Searchlight_Dataset_v12.0/all_cohorts/measure_data/svip_mhi_version_1_lifetime.csv") %>% 
+#   select(sfari_id,sex,genetic_status,has_potential_confound)
+# 
+# additional_ids2 <- read_csv("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/SFARI/Simons_Searchlight_Dataset_v12.0/all_cohorts/measure_data/previous_diagnosis.csv") %>% 
+#   select(sfari_id,sex,genetic_status,has_potential_confound)
+# 
+# additional_ids_complete <- bind_rows(additional_ids,additional_ids2) %>% distinct() %>% 
+#   dplyr::rename("gene_group" = "genetic_status") %>% 
+#   mutate(has_potential_confound = ifelse(has_potential_confound == 0,"No", "Yes"),
+#          sex = ifelse(sex == "female","Female","Male"))
+
+# new files v13 
+sfari_master <-read_csv("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/SFARI/Searchlight Dataset v13.0/Simons_Searchlight_Dataset_v13.0/all_cohorts/measure_data/lab_results.csv") %>% 
+  #select(sfari_id,sex,genetic_status,inheritance_status,has_potential_confound,latest_variant_classification,cnv_snv,c_nomen,p_nomen) %>% 
+  filter(genetic_status != "Negative (normal)",
+         genetic_status != "Not Tested") %>% 
+  mutate(inheritance = case_when(inheritance_status == "na" | is.na(inheritance_status) | inheritance_status == "unknown" ~ "Unknown",
+                                 T~paste0(str_sub(inheritance_status,1,1) %>% toupper, str_sub(inheritance_status,2,-1))),
+         latest_variant_classification = case_when(is.na(latest_variant_classification) | latest_variant_classification %in% c("other","single_add","single_intragen","none")~ "Other/Unknown",
+                                                   T~paste0(str_sub(latest_variant_classification,1,1) %>% toupper, str_sub(latest_variant_classification,2,-1)))
+  ) %>% 
+  mutate(Vartype = case_when(cnv_snv != "snv" ~"CNV",
+                             str_detect(c_nomen, "\\+1[A-Z]|\\+2[A-Z]|-1[A-Z]|-2[A-Z]")~ "Splice site",
+                             str_detect(c_nomen, "\\+|\\-") & !str_detect(c_nomen, "del") & !str_detect(c_nomen,"dup")~"Intronic",
+                             str_detect(p_nomen, "TER|Ter|\\*|fs|X|x")~"PTV",
+                             is.na(c_nomen) & is.na(p_nomen) | (c_nomen == "n/a" & p_nomen == "n/a") ~ "Other/Unknown",
+                             str_detect(c_nomen, "del|dup|ins") ~ "Other/Unknown",
+                             str_detect(p_nomen,"\\?")~"PTV",#start loss 
+                             !is.na(p_nomen)~"Missense",
+                             T~"Other/Unknown"),
+         gene_group = genetic_status,
+         has_potential_confound = ifelse(has_potential_confound == 0,"No", "Yes"),
+         sex = ifelse(sex == "female","Female","Male")) %>% 
+  select(sfari_id,sex,gene_group,inheritance,has_potential_confound,latest_variant_classification,Vartype)
+
+# Load missing sfari ids descriptions
+additional_ids <- read_csv("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/SFARI/Searchlight Dataset v13.0/Simons_Searchlight_Dataset_v13.0/all_cohorts/measure_data/svip_mhi_version_1_lifetime.csv") %>% 
+  select(sfari_id,sex,genetic_status,has_potential_confound)
+
+additional_ids2 <- read_csv("C:/Users/tbrunger/OneDrive - UTHealth Houston/Bioinformatics/SFARI/Searchlight Dataset v13.0/Simons_Searchlight_Dataset_v13.0/all_cohorts/measure_data/previous_diagnosis.csv") %>% 
+  select(sfari_id,sex,genetic_status,has_potential_confound)
+
+additional_ids_complete <- bind_rows(additional_ids,additional_ids2) %>% distinct() %>% 
+  dplyr::rename("gene_group" = "genetic_status") %>% 
+  mutate(has_potential_confound = ifelse(has_potential_confound == 0,"No", "Yes"),
+         sex = ifelse(sex == "female","Female","Male"))
+
+
+# Load Ludovica's data 
+phenotype_list <- list.files("ndd_web_portal/ndd_web_portal/sfari_lifetime_13.0_x_phenotype/") %>% 
+  .[. != "sfari_lifetime_13.0_x_phenotype"] %>%
+  str_remove(.,"onset_") %>% 
+  str_remove(.,"event_") %>% 
+  unique() 
+
+# First iteration simply to aggregate sfari_ids across all datasets 
+sfari_ids <- c()
+
+for(pheno in phenotype_list){
+  
+  onset <- read_delim(paste0("ndd_web_portal/ndd_web_portal/sfari_lifetime_13.0_x_phenotype/onset_", pheno), delim= "\t", show_col_types = F)
+  event <- read_delim(paste0("ndd_web_portal/ndd_web_portal/sfari_lifetime_13.0_x_phenotype/event_", pheno), delim= "\t", show_col_types = F)
+  
+  sfari_ids <- c(sfari_ids,onset$sfari_id,event$sfari_id) %>% unique()
+  
+}
+
+# Add desired descriptor to sfari list and create master df
+ndd_master <- tibble(sfari_id = sfari_ids) %>% 
+  left_join(sfari_master, by = "sfari_id") 
+
+ndd_master_missing <- ndd_master %>% 
+  filter(is.na(sex))
+
+# Adds information to missing individuals likely those without genetic data 
+master_complements <- additional_ids_complete %>% 
+  mutate(Vartype = "Other/Unknown", 
+         Classification_final = "Other/Unknown") %>% 
+  filter(sfari_id %in% ndd_master_missing$sfari_id)  
+
+# Merges all individual data 
+ndd_master <- ndd_master %>% 
+  filter(!is.na(sex)) %>% 
+  bind_rows(master_complements)
+
+# Second iteration to add phenotype data to sfari_ids
+
+# remove Ids without any patient (manyally selected
+phenotype_list <- phenotype_list[!str_detect(phenotype_list,"cancer_spec_brain")]
+
+#iterate to add any available phenotype 
+for(pheno in phenotype_list){
+  
+  print(which(pheno == phenotype_list))
+  
+  event <- read_delim(paste0("ndd_web_portal/ndd_web_portal/sfari_lifetimeV1_x_phenotype/event_", pheno), delim= "\t", show_col_types = F) %>% 
+    select(1,2) 
+  event <- event %>% 
+    setNames(c("sfari_id", paste0("event_",colnames(event)[2])))
+  
+  onset <- read_delim(paste0("ndd_web_portal/ndd_web_portal/sfari_lifetimeV1_x_phenotype/onset_", pheno), delim= "\t", show_col_types = F) %>% 
+    select(1:4)
+  onset <- onset %>% 
+    setNames(c("sfari_id", paste0("onset_",colnames(onset)[2]),paste0("onset_",colnames(onset)[2],"_diagnosisage"),paste0("onset_",colnames(onset)[2], "_maxage")))
+  
+  ndd_master <- ndd_master %>% 
+    left_join(event) %>% 
+    left_join(onset)
+}
+
+# Save master file for portal 
+write_delim(ndd_master,"data/master_int.txt", delim = "\t")
+
+# Take intermediate script "add new genes" to add additioanl genes ####
+# Load NDD master with gene addition
+
+ndd_master <- read_delim("data/master.txt", delim = "\t")
+
+# Identify phenotypes with sufficient age of onset data available ####
+
+master_dic_short.df <- read_delim("data/master_dict.txt", delim = "\t", show_col_types = F) %>% 
+  mutate(phenotype = paste0("onset_",event_variable) %>% tolower()) %>% 
+  select(shortname,panel,phenotype)
+
+gene_pheno <- ndd_master %>% 
+  select(-any_of(ends_with("diagnosisage")),-any_of(ends_with("maxage")),-any_of(starts_with("event"))) %>% 
+  select(gene_group,starts_with("onset")) %>% 
+  pivot_longer(
+    cols      = -gene_group,
+    names_to  = "phenotype",
+    values_to = "val"
+  ) 
+
+#create fake entries to substract later but to ensure all possibilities are available 
+gene_pheno_enricher <- gene_pheno %>% 
+  select(gene_group,phenotype) %>% 
+  distinct() %>% 
+  mutate(val = 0,
+         val1 = 1) %>% 
+  pivot_longer(cols = c(-gene_group,-phenotype), names_to = "test", values_to = "val") %>% 
+  select(-test)
+
+pheno_ava <- bind_rows(gene_pheno,gene_pheno_enricher) %>% 
+  group_by(gene_group, phenotype, val) %>%
+  summarize(
+    n_nonNA = sum(!is.na(val)),
+    .groups = "drop"
+  ) %>%  
+  filter(!is.na(val)) %>% 
+  mutate(n_nonNA = n_nonNA-1) %>% #substract artifical added values
+  group_by(gene_group, phenotype) %>% 
+  mutate(n_total = sum(n_nonNA)) %>% 
+  ungroup() %>% 
+  filter(n_total >= 10) %>% 
+  filter(val == 1) %>% 
+  mutate(frac_w_pheno = n_nonNA/n_total) %>% 
+  group_by(phenotype) %>% 
+  mutate(frac_w_pheno_global = sum(n_nonNA)/n_total) %>% 
+  ungroup() %>% 
+  mutate(global_5 = ifelse(frac_w_pheno <0.05 & frac_w_pheno_global < 0.05, "below 5", "above 5")) %>% 
+  left_join(master_dic_short.df, by = c("phenotype")) 
+
+#CACNA1A specific modification 
+pheno_ava %>% 
+  filter(gene_group == "CACNA1A") %>% 
+  filter(frac_w_pheno != 0) %>% 
+  bind_rows(pheno_ava %>% filter(gene_group != "CACNA1A")) %>% 
+  write_delim("data/kaplan_phenotype_availability.txt", delim = "\t")

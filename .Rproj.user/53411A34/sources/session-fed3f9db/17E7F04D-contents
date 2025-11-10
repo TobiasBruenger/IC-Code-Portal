@@ -109,7 +109,27 @@ shinyUI(
         
         #Guidelines Panel ####
         tabPanel("Instructions for Use", value = "guidelinetab",
-                 div(style = "margin: 5% 10%; text-align:justify; max-width:1200px;",
+                 div(style = "margin: 5% 10%; text-align:left; max-width:1200px;",
+                     
+                     div(
+                       style = "margin-top:20px; text-align:center;",
+                       h1("Tutorial"),
+                     ),
+                     
+                     div(
+                       style = "display:flex; justify-content:center; margin-top:10px;",
+                       tags$video(
+                         id = "tutorial",
+                         type = "video/mp4",
+                         src = "IC-CoDE Instructions.mp4",
+                         controls = NA,        
+                         width = "800px",
+                         autoplay = FALSE,
+                         allowfullscreen = NA,
+                         webkitallowfullscreen = NA,
+                         mozallowfullscreen = NA
+                       )
+                     ),
                      
                      #### PART 1: INDIVIDUAL DATA ENTRY ####
                      tags$hr(style = "border-top: 1.5px solid black; margin-top:10px; margin-bottom:10px;"),
@@ -225,7 +245,7 @@ shinyUI(
                                  # Mood
                                  tags$li(
                                    tagList(
-                                     tags$b("Mood Symptoms (Optional)"),
+                                     tags$b("MOOD AND BEHAVIOR (Optional)"),
                                      tags$ul(style = "list-style-type: circle; padding-left: 20px; margin-top: 6px;",
                                              tags$li(HTML("<b>Subdomains:</b> Depression, Anxiety, Behavior")),
                                              tags$li(HTML("Example Tests: BDI (Depression), BAI (Anxiety), CBCL (Behavior)")),
@@ -631,7 +651,7 @@ shinyUI(
                                       ),
                                       
                                       br(),
-                                      div(class = "custom-text-box", "Mood Symptoms (optional)"),
+                                      div(class = "custom-text-box", "MOOD AND BEHAVIOR (optional)"),
                                       uiOutput("mood_symptoms_warning_ui"),
                                       
                                       column(12,# offset = 1,
@@ -803,7 +823,7 @@ shinyUI(
                                   ##create template ####
                                   tabPanel("Create Template",
                                     h3("Please use the drop down menus below to select the measures in your neuropsychological battery and indicate the scale on which each score is reported (e.g., standard score, T-score). A higher test score always indicates a better test result. At the bottom, you also have the option of including data for mood questionnaires and filters, or covariates, you may want to use in your research (e.g., demographic and disease variables). Several common measures and filters are provided as examples, but these can be deleted or replaced (simply type over the existing measures or filter) with the measures or filters relevant to your research. ",tags$b("Please be sure to check the “Include” box to the right of each measure that you want included in your data entry template.")),
-                                    h4(tags$b("Note:"),"Once you are done selecting your test list, you will be able to download your data entry template in an Excel format in which you can enter the relevant test scores and variables at your convenience. You can then return to the website with the completed data file at a later time and use the 'Upload data and generate results tab' to generate cognitive phenotypes."),
+                                    h4(tags$b("Note:"),"Once you are done selecting your test list, you will be able to download your data entry template in an Excel format in which you can enter the relevant test scores and variables at your convenience. You can then return to the website with the completed data file at a later time and use the 'Upload Data and Generate Results' tab to generate cognitive phenotypes."),
                                     
                                     #Group UI 
                                     div(class = "custom-text-box", "LANGUAGE"),
@@ -856,7 +876,7 @@ shinyUI(
                                     
                                     column(12,
                                            actionLink(inputId = "a_btn_MG", label = "Attention (+)", class = "custom-action-link"),
-                                           hidden(div(id = "attention___working_memory_content_MG", uiOutput("attention___working_memory_content_ui_MG"))),
+                                           hidden(div(id = "attention___working_memory_content_MG", uiOutput("attention_content_ui_MG"))),
                                            br(),
                                            actionLink(inputId = "pro_s_btn_MG", label = "Processing Speed (+)", class = "custom-action-link"),
                                            hidden(div(id = "processing_speed_content_MG", uiOutput("processing_speed_content_ui_MG")))
@@ -874,7 +894,7 @@ shinyUI(
                                            hidden(div(id = "visuoperception_content_MG", uiOutput("visuoperception_content_ui_MG")))
                                     ),
                                     
-                                    div(class = "custom-text-box", "Mood Symptoms"),
+                                    div(class = "custom-text-box", "MOOD AND BEHAVIOR (optional)"),
                                     uiOutput("mood_symptoms_warning_ui_MG"),
                                     
                                     column(12,
@@ -888,7 +908,7 @@ shinyUI(
                                            div(id = "behavior_content_MG", style = "display: none;", uiOutput("behavior_content_ui_MG"))
                                     ),
                                     
-                                    div(class = "custom-text-box", "Filter options"),
+                                    div(class = "custom-text-box", "FILTERS"),
                                     
                                     column(12,
                                            actionLink(inputId ="filters_btn_MG", label ="Filters (+)",class="custom-action-link", onclick ="toggleContent('filters_content_MG')"),
@@ -904,7 +924,7 @@ shinyUI(
                                     ),
                                     column(12),
                                   ),
-                                  tabPanel("Upload data and generate results",
+                                  tabPanel("Upload Data and Generate Results",
                                            h4(HTML(paste0(tags$b("Upload completed Excel data template to generate IC-CoDE phenotypes"), "  (the website does not require any additional information to generate IC-CoDE phenotypes from a completed data template in which all scores have been entered)"))),
                                            #hidden(div(id = "output_content", uiOutput("results"))),
                                            fileInput("file_upload",label="",

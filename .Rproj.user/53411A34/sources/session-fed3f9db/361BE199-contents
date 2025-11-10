@@ -1,0 +1,118 @@
+lapply(seq_along(twolists$resultlist), function(i) {
+  #output[[paste0("pie_chart_", i)]] <- renderPlotly({
+    df <- twolists$resultlist[[i]]
+    
+    # Apply filters
+    filter_columns <- colnames(twolists$filtertable)
+    for (col in filter_columns) {
+      if (is.numeric(twolists$filtertable[[col]])) {
+        range <- input[[paste0("filter_", col, "_range")]]
+        if (!is.null(range) && (range[1] != min(twolists$filtertable[[col]], na.rm = TRUE) || range[2] != max(twolists$filtertable[[col]], na.rm = TRUE))) {
+          df <- df %>% filter(get(col) >= range[1] & get(col) <= range[2] | is.na(get(col)))
+        }
+      } else {
+        selected_value <- input[[paste0("filter_", col)]]
+        if (!is.null(selected_value) && !("All" %in% selected_value)) {
+          df <- df %>% filter(get(col) %in% selected_value)
+        }
+      }
+    }
+    
+    
+    # Create a dataset summarizing impairment percentages
+    domain_columns <- c(
+      "Language Domain", 
+      "Memory Domain", 
+      "Executive Function Domain", 
+      "Attention/Processing Speed Domain", 
+      "Visuospatial Domain"
+    )
+    
+    
+    display_names <- c(
+      "Language",
+      "Memory",
+      "Executive",
+      "Attention/Processing Speed",
+      "Visuospatial"
+    )
+    names(display_names) <- domain_columns
+
+    df_summary <- df %>%
+      group_by(Phenotype) %>%
+      summarise(
+        `Number of individuals` = n(),
+        across(all_of(domain_columns), ~ mean(. == "impaired", na.rm = TRUE) * 100, .names = "{col}_imp_percent")
+      ) %>%
+      ungroup() %>%
+      filter(!Phenotype %in% c("Data not provided", "Not sufficient domains assessed"))
+
+    bi_pairs <- df %>%
+      filter(Phenotype == "Bi-domain") %>%
+      mutate(
+        impaired = pmap(select(., all_of(domain_cols)), ~ c(...)),
+        impaired = map(impaired, ~ domain_cols[.x == "impaired"])
+      ) %>%
+      # each bi-domain case contributes one pair
+      mutate(pair = map_chr(impaired, ~ paste(sort(.x)[1:2], collapse = "|"))) %>%
+      count(pair) %>%
+      mutate(pct = round(100 * n / sum(n))) %>%
+      mutate(text = paste0(
+        pct, "% ",
+        pair %>%
+          str_replace("\\|", "/") %>%
+          str_replace_all(display_names)
+      )) %>%
+      summarise(text = paste(text, collapse = "\n")) %>%
+      mutate(Phenotype = "Bi-domain")
+    
+    # Adjust color panel
+    color_panel <- c(
+      "Bi-domain" = "#00545e",
+      "Generalized" = "#002f30",
+      "Intact" = "#a1c5ca", 
+      "Single Domain" = "#5598a3"
+    )
+    
+    color_panel_adj <- color_panel[which(names(color_panel) %in% unique(df_summary$Phenotype))]
+    
+    # Add text including both number of individuals and percentage impairments
+    df_summary <- df_summary %>%
+      left_join(bi_pairs, by = "Phenotype") %>%
+      rowwise() %>%
+      mutate(
+        text_info = case_when(
+          Phenotype == "Bi-domain" ~ paste0(
+            "Number of individuals: ", `Number of individuals`, "\n", text
+          ),
+          Phenotype == "Single Domain" ~ paste0(
+            "Number of individuals: ", `Number of individuals`, "\n",
+            round(`Language Domain_imp_percent`), "% Language Domain\n",
+            round(`Memory Domain_imp_percent`), "% Memory Domain\n",
+            round(`Executive Function Domain_imp_percent`), "% Executive Domain\n",
+            round(`Attention/Processing Speed Domain_imp_percent`), "% Attention/Processing Speed Domain\n",
+            round(`Visuospatial Domain_imp_percent`), "% Visuospatial Domain"
+          ),
+          TRUE ~ paste0("Number of individuals: ", `Number of individuals`)
+        )
+      ) %>%
+      ungroup()
+    
+    # Create the pie chart
+    plot_ly(
+      df_summary,
+      labels = ~Phenotype,
+      values = ~`Number of individuals`,
+      type = 'pie',
+      text = ~text_info,
+      textinfo = "label+percent",
+      hoverinfo = "text",
+      marker = list(colors = color_panel_adj),
+      insidetextorientation = 'radial'
+    ) %>% layout(
+      #title = paste("Phenotypes ", input$cutoffSelection_MG[i], "SD"),
+      showlegend = FALSE
+    )
+    
+ # })
+})
