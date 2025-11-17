@@ -121,7 +121,7 @@ shinyUI(
                        tags$video(
                          id = "tutorial",
                          type = "video/mp4",
-                         src = "IC-CoDE Instructions.mp4",
+                         src = "IC_CoDE_Instructions.mp4",
                          controls = NA,        
                          width = "800px",
                          autoplay = FALSE,
