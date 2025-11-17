@@ -908,7 +908,7 @@ shinyUI(
                                            div(id = "behavior_content_MG", style = "display: none;", uiOutput("behavior_content_ui_MG"))
                                     ),
                                     
-                                    div(class = "custom-text-box", "FILTERS"),
+                                    div(class = "custom-text-box", "FILTERS (optional)"),
                                     
                                     column(12,
                                            actionLink(inputId ="filters_btn_MG", label ="Filters (+)",class="custom-action-link", onclick ="toggleContent('filters_content_MG')"),
