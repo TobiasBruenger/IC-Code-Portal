@@ -1783,7 +1783,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
     }
     
     # Read the uploaded file
-    uploaded_table <- read_excel(inFile$datapath)
+    uploaded_table <- read_excel(inFile$datapath, guess_max = 100000)
     
     twolists <- process_data(uploaded_table,input$cutoffSelection_MG)
     #print(twolists)
