@@ -1,0 +1,1998 @@
+#####################################
+########## IC-CODE Portal ###########
+#####################################
+
+##### LIBRARIES #####
+
+library(shiny)
+library(shinydashboard)
+library(shinydashboardPlus)
+library(shinythemes)
+library(shinyWidgets)
+library(plotly)
+library(readxl)
+library(tidyverse)
+library(tippy)
+library(shinyvalidate)
+library(DT)
+library(webshot)
+library(openxlsx)
+library(shinyalert)
+
+library(bslib)
+
+#### PLOTLY ####
+plotly_font <- list(
+  family = "sans-serif",
+  size = 13)
+
+goodbye <- c("zoomIn2d", "zoomOut2d", "hoverClosestGeo", "hoverClosestGl2d",
+             "hoverClosestCartesian","lasso2d","select2d","resetScale2d",
+             "hoverCompareCartesian", "hoverClosestPie","toggleSpikelines")
+
+
+#Test categories 
+all_tests <- list(
+  Naming = c(
+    "Boston Naming Test", "Auditory Naming Test", "Visual Naming Test", "NAB Naming Test", "Multilingual Naming Test", "Other Naming", "Other Naming2", "Other Naming3"
+    # Add other Naming test names here
+  ),
+  Fluency = c(
+    "Category Fluency", "Other Fluency", "Other Fluency2", "Other Fluency3"
+    # Add other test names for Category2 here
+  ),
+  `Word List Delayed Recall` = c(
+    "Rey Auditory Verbal Learning Test - Trial 7","California Verbal Learning Test Long Delay Free Recall","Selective Reminding Test - Long Term Storage","WMS Word List II","Hopkins Verbal Learning Test Delayed Free Recall","Other WMS", "Other WMS2", "Other WMS3"
+  ),
+  `Story/Prose Delayed Recall` = c(
+    "WMS Logical Memory II", "Other Story/Prose", "Other Story/Prose2", "Other Story/Prose3"
+  ),
+  `Word Pair Delayed Recall` = c(
+    "WMS Verbal Paired Associates II", "Other Word Pair",  "Other Word Pair2",  "Other Word Pair3"
+  ),
+  `Design Delayed Recall` = c(
+    "WMS Visual Reproduction II", "Brief Visual Memory Test Delayed Recall", "7/24 Spatial Recall Test Delayed Recall", "Rey-O Delayed Free Recall", "Other Design Delay","Other Design Delay2", "Other Design Delay3"
+  ),
+  `Set-Shifting` = c(
+    "Trail Making Test – Part B", "DKEFS Trail Making Test – Number-Letter Switching", "DKEFS Verbal Fluency – Category Switching", "Other set shifting", "Other set shifting2", "Other set shifting3"
+  ),
+  `Problem-Solving` = c(
+    "Wisconsin Card Sorting Test – Perseverative Errors or Perseverative Responses", "DKEFS Towers Test – Achievement Score", "Other problem solving", "Other problem solving2", "Other problem solving3"
+  ),
+  `Response Inhibition` = c(
+    "Stroop Color-Word Interference", "DKEFS Color-Word Inhibition Switching", "Other response inhibiton", "Other response inhibiton2", "Other response inhibiton3"
+  ),
+  `Attention` = c(
+    "WAIS Digit Span Total or Forward", "WMS Spatial Span Total or Forward", "Ruff 2 and 7", "Other attention", "Other attention2", "Other attention3"
+  ),
+  `Processing Speed` = c(
+    "Trail Making Test – Part A", "DKEFS Trail Making Test – Number Sequencing Subtest or Letter Sequencing Subtest", "WAIS Coding", "WAIS Symbol Search", "Symbol Digit Modalities Test", "DKEFS Color-Word Naming", "Other processing speed", "Other processing speed2", "Other processing speed3"
+  ),
+  `Visuoconstruction` = c(
+    "WAIS Block Design", "WMS Visual Reproduction Copy", "Complex Figure Copy", "Other visuoconstrauction", "Other visuoconstrauction2", "Other visuoconstrauction3"
+  ),
+  `Visuoperception` = c(
+    "Judgment of Line Orientation", "Hooper Visual Organization Test", "Facial Recognition Test", "Other Visuoperception", "Other Visuoperception2", "Other Visuoperception3"
+  )
+  # Add more categories and test names as needed
+)
+
+#Functions 
+generatenameUI <- function(test_name) {
+  fluidRow( # Adding headers for Measure and Scale
+    column(5, h3("Measure", style = "text-align:center; color: purple; font-weight: 600;")),
+    column(2, h3("Score", style = "text-align:center; color: purple; font-weight: 600;")), # Center-aligning the header
+    column(3, h3("Scale", style = "text-align:center; color: purple; font-weight: 600;")) # Center-aligning the header
+  )
+}
+
+
+generatemeasureUI <- function(test_name, value_inputId, scale_inputId, scaleSelected) {
+  if (!str_detect(test_name,"Other")) {
+    fluidRow(
+      column(5, textInput(inputId = paste0(value_inputId, "_name"), label = NULL, value = test_name, placeholder = "Enter test name", width = "100%")),
+      column(2, numericInput(inputId = value_inputId, label = NULL, value = NULL, width = "100%")),
+      column(3, selectInput(inputId = scale_inputId, label = NULL,
+                            choices = c("Standard Score (M=100, SD=15)", 
+                                        "Scaled Score (M=10, SD=3)",
+                                        "T-score (M=50, SD=10)",
+                                        "Z-score (M=0, SD=1)",
+                                        "Percentile Score (%tile)"),
+                            selected = scaleSelected, width = "100%")),
+      #column(1, "test")
+      column(1, div(id = paste0(sanitizeTestName(test_name), "_warning_message_sd"), class = "warning-message", style = "position: relative;",
+                    tippy(icon("exclamation-triangle", class = "fa-2x", style = "color: red; cursor: pointer;"),
+                          tooltip = h4("Value differs by more than 2SD. Please ensure score and scale are correctly entered."), 
+                          animation = "scale", 
+                          theme = "light")
+       )
+      )
+      
+    )
+  } else {
+    fluidRow(
+      column(5, textInput(inputId = paste0(value_inputId, "_name"), label = NULL, placeholder = "Enter test name", width = "100%")),
+      column(2, numericInput(inputId = value_inputId, label = NULL, value = NULL, width = "100%")),
+      column(3, selectInput(inputId = scale_inputId, label = NULL,
+                            choices = c("Standard Score (M=100, SD=15)",
+                                        "Scaled Score (M=10, SD=3)",
+                                        "T-score (M=50, SD=10)",
+                                        "Z-score (M=0, SD=1)",
+                                        "Percentile Score (%tile)"),
+                            selected = scaleSelected, width = "100%")),
+      #column(1, "test")
+      column(1, div(id = paste0(sanitizeTestName(test_name), "_warning_message_sd"), class = "warning-message", style = "position: relative;",
+                    tippy(icon("exclamation-triangle", class = "fa-2x", style = "color: red; cursor: pointer;"),
+                          tooltip = h4("Value differs by more than 2 SD. Please ensure score and scale are correctly entered."),
+                          animation = "scale",
+                          theme = "light")
+      )
+      )
+
+    )
+  }
+}
+
+
+#Transform sores 
+# #calculate ouput ####
+scaled_to_standard <- function(scaled_score) {
+  return((scaled_score - 10) * (15/3) + 100)
+}
+
+t_to_standard <- function(t_score) {
+  return((t_score - 50) * (15/10) + 100)
+}
+
+
+z_to_standard <- function(z_score) {
+  return((z_score - 0) * (15/1) + 100)
+}
+
+percentile_to_standard <- function(percentile_score) {
+  
+  percentile_score <- as.numeric(percentile_score)
+
+  ifelse(
+    is.na(percentile_score),
+    NA_real_,
+    (qnorm(percentile_score / 100) * 15) + 100
+  )
+}
+
+
+#function to take any score and any value and transform it to the stanard score
+
+transform_score <- function(score, scale, checkbox) {
+  
+  if(is.null(checkbox) | is.null(score) |is.null(scale)){
+    return(100)
+  } else if (is.na(score)){
+    return(100) 
+  } else {
+    if(!is.null(checkbox) & checkbox) {
+      if(scale == "Scaled Score (M=10, SD=3)") {
+        return(scaled_to_standard(score))
+      } else if(scale == "T-score (M=50, SD=10)") {
+        return(t_to_standard(score))
+      } else if (scale == "Z-score (M=0, SD=1)") {
+        return(z_to_standard(score))
+      } else if (scale == "Percentile Score (%tile)") {
+        return(percentile_to_standard(score))
+      } else {
+        return(score)
+      }
+    } else {
+      return(100) # average score, will not be counted as impaired as not below 1sd of 100
+    }
+  }
+}
+
+# Warning message for values above or below sd expectations 2sd/3sd 
+observeWarningMessage <- function(score, scale, warning_message_id) {
+  observe({
+    # Transform the score to a standard score
+    trans_score <- transform_score(score, scale, TRUE)
+    # Check if the transformed score is outside the expected range
+    if (!is.null(trans_score) && (trans_score > 130 | trans_score < 70)) {
+      # Show the warning message if the condition is met
+      shinyjs::toggle(warning_message_id, condition = TRUE)
+    } else {
+      # Hide the warning message if the condition is not met
+      shinyjs::toggle(warning_message_id, condition = FALSE)
+    }
+  })
+}
+
+#generate clean IDs
+sanitizeTestName <- function(test_name) {
+  # Remove spaces and replace slashes with underscores
+  sanitized_name <- gsub("[[:space:]]", "_", test_name)
+  sanitized_name <- gsub("/", "_", sanitized_name)
+  return(sanitized_name)
+}
+
+
+#Generate warnning for to less values per domain selected 
+generateDomainWarningUI <- function(domain, count) {
+  if (count < 2) {
+    div(class = "warning-message", style = "color: red; margin-left: 10px;",
+        paste0("Warning: You have selected only ", count, " test(s) for ", domain))
+  } else {
+    div()  # Return an empty div if the count is not less than 2
+  }
+}
+
+#generate a ccategory name given a test name 
+test_to_category <- function(test_name) {
+  categories <- names(all_tests)
+  for (category in categories) {
+    if (test_name %in% all_tests[[category]]) {
+      return(category)
+    }
+  }
+  return(NA)  # If the test name is not found in any category
+}
+
+generate_modifier_output <- function(category, test_name, score) {
+  modifier_output <- ""
+
+  # 
+  if (!is.na(score)) {
+    score_interpretation <- score_interpretations[[category]][[test_name]]
+    numeric_score <- as.numeric(score)
+    
+    if (!is.na(numeric_score)) {
+      for (score_range in names(score_interpretation)) {
+        range_values <- unlist(strsplit(score_range, "-"))
+        range_min <- as.numeric(range_values[1])
+        range_max <- as.numeric(range_values[2])
+        
+        if (numeric_score >= range_min && numeric_score <= range_max) {
+          modifier_output <- paste(score_interpretation[[score_range]], " (Score range ", score_range, ")", sep = "")
+          break
+        }
+      }
+      
+      # If score is not within any defined range
+      if (modifier_output == "") {
+        modifier_output <- paste("Selected score (", score, ") is out of range for the test ", test_name)
+      }
+    } else {
+      modifier_output <- paste("Invalid score (", score, ") for the test ", test_name)
+    }
+  } else {
+    modifier_output <- paste("No score provided for ", test_name)
+  }
+  
+  return(modifier_output)
+}
+
+#MOOD domain ####
+# Define the tests for the special domain "Mood Symptoms (optional)"
+mood_tests <- list(
+  Depression = c(
+    "Beck Depression Inventory (BDI-2)",
+    "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)",
+    "Patient Health Questionnaire Depression Scale (PHQ-9)",
+    "Children’s Depression Inventory (CDI)",
+    "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)"
+    
+  ),
+  Anxiety = c(
+    "Beck Anxiety Inventory (BAI)",
+    "Generalized Anxiety Disorder (GAD-7)",
+    "Multidimensional Anxiety Questionnaire (MAQ)",
+    "Screen for Child Anxiety Related Disorders (SCARED)",
+    "Multidimensional Anxiety Scale for Children (MASC)",
+    "Revised Children’s Manifest Anxiety Scale (RCMAS)"
+  ),
+  Behavior = c(
+    "Children’s Behavior Checklist (CBCL)",
+    "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory",
+    "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory"
+  )
+)
+
+filter_tests <- list(
+  Filters = c(
+    "Age",
+    "Sex",
+    "Education",
+    "Language dominance",
+    "Type of seizures (focal / generalized)",
+    "Side of seizures",
+    "Site of seizures",
+    "Other (specify)",
+    "Other (specify)",
+    "Other (specify)"
+  )
+)
+
+# Define the mapping between test names and their categories
+moodtest_to_category <- c(
+  "Beck Depression Inventory (BDI-2)" = "Depression",
+  "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)" = "Depression",
+  "Patient Health Questionnaire Depression Scale (PHQ-9)" = "Depression",
+  "Children’s Depression Inventory (CDI)" = "Depression",
+  "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)" = "Depression",
+  "Beck Anxiety Inventory (BAI)" = "Anxiety",
+  "Generalized Anxiety Disorder (GAD-7)" = "Anxiety",
+  "Multidimensional Anxiety Questionnaire (MAQ)" = "Anxiety",
+  "Screen for Child Anxiety Related Disorders (SCARED)" = "Anxiety",
+  "Multidimensional Anxiety Scale for Children (MASC)" = "Anxiety",
+  "Revised Children’s Manifest Anxiety Scale (RCMAS)" = "Anxiety",
+  "Children’s Behavior Checklist (CBCL)" = "Behavior",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory" = "Behavior",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory" = "Behavior"
+)
+
+#values for test interpretation 
+interpretations <- list(
+  "Beck Depression Inventory (BDI-2)" = "0-13 – Minimal Depressive Symptoms<br>14-19 – Mild Depressive Symptoms<br>20-28 – Moderate Depressive Symptoms<br>29-63 – Severe Depressive Symptoms",
+  "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)" = "<14 – Minimal Depressive Symptoms<br>>15 – Elevated Depressive Symptoms",
+  "Patient Health Questionnaire Depression Scale (PHQ-9)" = "0-4 – Minimal Depressive Symptoms<br>5-9 – Mild Depressive Symptoms<br>10-14 – Moderate Depressive Symptoms<br>15-19 – Moderately Severe Depressive Symptoms<br>20-27 – Severe Depressive Symptoms",
+  "Children’s Depression Inventory (CDI)" = "<40 – Low<br>40-59 – Average<br>60-64 – High Average<br>65-69 – Elevated<br>70+ – Very Elevated",
+  "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)" = "<40 – Low<br>40-59 – Average<br>60-64 – High Average<br>65-69 – Elevated<br>70+ – Very Elevated",
+  #Anxiety 
+  "Beck Anxiety Inventory (BAI)" = "0-7 – Minimal Anxiety Symptoms<br>8-15 – Mild Anxiety Symptoms<br>16-25 – Moderate Anxiety Symptoms<br>26-63 – Severe Anxiety Symptoms",
+  "Generalized Anxiety Disorder (GAD-7)" = "0-4 – Minimal Anxiety Symptoms<br>5-9 – Mild Anxiety Symptoms<br>10-14 – Moderate Anxiety Symptoms<br>15-21 – Severe Anxiety Symptoms",
+  "Multidimensional Anxiety Questionnaire (MAQ)" = "40-67 – Not Anxious <br>68-72 –  Mild or subclinical anxiety<br>73-80 – Moderate Anxiety<br>81+ = Severe Anxiety",
+  "Screen for Child Anxiety Related Disorders (SCARED)" = "<25 – Normal<br>25+ – Elevated",
+  "Multidimensional Anxiety Scale for Children (MASC)" = "<40 – Low<br>40-45 – Average<br>55-59 – High Average<br>60-64 – Slightly Elevated<br>65-69 – Elevated<br>70+ – Very Elevated",
+  "Revised Children’s Manifest Anxiety Scale (RCMAS)" = "0-9 – Normal or No Anxiety<br>10-18 – Mild to Moderate Anxiety<br>19-29 – Moderate to Severe Anxiety<br>30-63 – Severe Anxiety",
+  #behavior 
+  "Children’s Behavior Checklist (CBCL)" = "65-69 – Borderline Elevated<br>70+ – Clinically Elevated",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory" = "≤55 – Average<br>55-59 – Mildly Elevated<br>60-69 – Moderately Elevated<br>70+ – Extremely Elevated",
+  "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory" = "≤55 – Average<br>55-59 – Mildly Elevated<br>60-69 – Moderately Elevated<br>70+ – Extremely Elevated"
+)
+
+#Modifier output handeling 
+score_interpretations <- list(
+  Depression = list(
+    "Beck Depression Inventory (BDI-2)" = list(
+      "0-13" = "Minimal Depressive Symptoms",
+      "14-19" = "Mild Depressive Symptoms",
+      "20-28" = "Moderate Depressive Symptoms",
+      "29-63" = "Severe Depressive Symptoms"
+    ),
+    "Neurological Disorders Depression Inventory in Epilepsy (NDDI-E)" = list(
+      "0-14" = "Minimal Depressive Symptoms",
+      "15-50" = "Elevated Depressive Symptoms"
+    ),
+    "Patient Health Questionnaire Depression Scale (PHQ-9)" = list(
+      "0-4" = "Minimal Depressive Symptoms",
+      "5-9" = "Mild Depressive Symptoms",
+      "10-14" = "Moderate Depressive Symptoms",
+      "15-19" = "Moderately Severe Depressive Symptoms",
+      "20-27" = "Severe Depressive Symptoms"
+    ),
+    "Children’s Depression Inventory (CDI)" = list(
+      "0-39" = "Low",
+      "40-59" = "Average",
+      "60-64" = "High Average",
+      "65-69" = "Elevated",
+      "70-100" = "Very Elevated"
+    ),
+    "Children’s Depression Inventory – Second Edition - Self-Report (CDI-2 SR)" = list(
+      "0-39" = "Low",
+      "40-59" = "Average",
+      "60-64" = "High Average",
+      "65-69" = "Elevated",
+      "70-100" = "Very Elevated"
+    )
+  ),
+  Anxiety = list(
+    "Beck Anxiety Inventory (BAI)" = list(
+      "0-7" = "Minimal Anxiety Symptoms",
+      "8-15" = "Mild Anxiety Symptoms",
+      "16-25" = "Moderate Anxiety Symptoms",
+      "26-63" = "Severe Anxiety Symptoms"
+    ),
+    "Generalized Anxiety Disorder (GAD-7)" = list(
+      "0-4" = "Minimal Anxiety Symptoms",
+      "5-9" = "Mild Anxiety Symptoms",
+      "10-14" = "Moderate Anxiety Symptoms",
+      "15-21" = "Severe Anxiety Symptoms"
+    ),
+    "Multidimensional Anxiety Questionnaire (MAQ)" = list(
+      "40-67" = "Not Anxious",
+      "68-72" = "Mild or subclinical anxiety",
+      "73-80" = "Moderate Anxiety",
+      "81-150" = "Severe Anxiety" #150 is an arbitrary maximum value 
+    ),
+  "Screen for Child Anxiety Related Disorders (SCARED)" = list(
+    "0-24" = "Normal",
+    "25-100" = "Elevated"
+    ),
+  "Multidimensional Anxiety Scale for Children (MASC)" = list(
+    "0-39" = "Low",
+    "40-45" = "Average",
+    "55-59" = "High Average",
+    "60-64" = "Slightly Elevated",
+    "65-69" = "Elevated",
+    "70-100" = "Very Elevated"
+    ),
+  "Revised Children’s Manifest Anxiety Scale (RCMAS)" = list(
+    "0-9" = "Normal or No Anxiety",
+    "10-18" = "Mild to Moderate Anxiety",
+    "19-29" = "Moderate to Severe Anxiety",
+    "30-63" = "Severe Anxiety"
+    )
+  ),
+  Behavior = list(
+    "Children’s Behavior Checklist (CBCL)" = list(
+      "0-64" = "Normal",
+      "65-69" = "Borderline Elevated",
+      "70-100" = "Clinically Elevated"
+    ),
+    "Beck Youth Inventories – Second Edition (BYI-2) - Depression Inventory" = list(
+      "0-55" = "Average",
+      "55-59" = "Mildly Elevated",
+      "60-69" = "Moderately Elevated",
+      "70-100" = "Extremely Elevated"
+    ),
+    "Beck Youth Inventories – Second Edition (BYI-2) - Anxiety Inventory" = list(
+      "0-55" = "Average",
+      "55-59" = "Mildly Elevated",
+      "60-69" = "Moderately Elevated",
+      "70-100" = "Extremely Elevated"
+    )
+  )
+)
+
+#Functions 
+#generate Uis 
+
+generatenameUIMood <- function(test_name) {
+  fluidRow(
+    column(3, offset = 1, h3("Measure", style = "text-align:center; color: purple; font-weight: 600;")),
+    column(3, h3("Score", style = "text-align:center; color: purple; font-weight: 600;"))
+  ) 
+
+}
+
+
+shinyServer(function(input, output, session) { ##### SERVER #####
+  observe({
+    shinyalert(
+      title ="Cookies Policy",
+      text ="This website uses cookies to ensure you get the best experience. Please accept to continue.",
+      type ="info",
+      closeOnEsc =TRUE,
+      closeOnClickOutside =FALSE,
+      showCancelButton =TRUE,
+      confirmButtonText ="Accept",
+      confirmButtonCol ="#3085d6",
+      cancelButtonText ="Decline",
+      timer =0)
+  })
+  
+  observeEvent(input$getStartedButton, {
+    updateTabsetPanel(session, "TabDisplay", selected = "calculatortab")
+  })
+  
+  # Privcay policy link
+  observeEvent(list(input$privacy_link_about, input$privacy_link), {
+    showModal(modalDialog(
+      title = "Privacy Policy",
+      size = "l",
+      easyClose = TRUE,
+      footer = modalButton("Close"),
+      tags$iframe(
+        src   = "Privacy Policy - IC - CoDE Portal.pdf",
+        style = "width: 100%; height: 75vh; border: none;"
+      )
+    ))
+  }, ignoreInit = TRUE)
+  
+  #calculator####
+  
+  # #Terms of use
+  observeEvent(input$terms_of_use_info, {
+    showModal(modalDialog(
+      title = "View the complete Terms of Use",
+      size = "l", # Set the size of the modal to large
+      tags$iframe(style="height:700px; width:100%; border:none;",
+                  src="Terms_of_Use.pdf"),
+      easyClose = TRUE
+    ))
+  })
+  
+  
+  
+  # Create a list of tests to dynamically generate UI and observers
+  
+  #category to domain dictionary 
+  category_to_domain <- list(
+    "LANGUAGE" = "LANGUAGE",
+    "Naming" = "LANGUAGE",
+    "Fluency" = "LANGUAGE",
+    "MEMORY" = "MEMORY",
+    "Word List Delayed Recall" = "MEMORY",
+    "Story/Prose Delayed Recall" = "MEMORY",
+    "Word Pair Delayed Recall" = "MEMORY",
+    "Design Delayed Recall" = "MEMORY",
+    "EXECUTIVE FUNCTION" = "EXECUTIVE_FUNCTION",
+    "Set-Shifting" = "EXECUTIVE_FUNCTION",
+    "Problem-Solving" = "EXECUTIVE_FUNCTION",
+    "Response Inhibition" = "EXECUTIVE_FUNCTION",
+    "ATTENTION / PROCESSING SPEED" = "ATTENTION_PROCESSING_SPEED",
+    "Attention" = "ATTENTION_PROCESSING_SPEED",
+    "Processing Speed" = "ATTENTION_PROCESSING_SPEED",
+    "VISUOSPATIAL" = "VISUOSPATIAL",
+    "Visuoconstruction" = "VISUOSPATIAL",
+    "Visuoperception" = "VISUOSPATIAL"
+  )
+  
+  #Create input sinlge #####
+
+  # Create a list of selected values for each test (for example, all initialized to FALSE)
+  test_selected_values <- rep(FALSE, length(unlist(all_tests)))
+  
+  # A reactiveValues to store all the input values
+  values <- reactiveValues()
+  
+  #create reactive values to count the number of values provided in eahc domain 
+  selected_tests <- reactiveValues(
+    LANGUAGE = 0,
+    MEMORY = 0,
+    EXECUTIVE_FUNCTION = 0,
+    ATTENTION_PROCESSING_SPEED = 0,
+    VISUOSPATIAL = 0
+  )
+  
+    
+  
+  # Function to create observers based on the provided list
+  createObservers <- function(test_names, values) {
+    # Define a reactive function to calculate the count of valid entries
+    # Define the reactive function to calculate the count of valid entries for a specific domain
+    countValidEntries <- function(domain) {
+      count <- 0
+      for (test_name in test_names) {
+        sanitized_name <- sanitizeTestName(test_name)
+        value_inputId  <- paste0(sanitized_name, "_value")
+        if ( category_to_domain[[ test_to_category(test_name) ]] == domain &&
+             !is.null(input[[value_inputId]]) && !is.na(input[[value_inputId]]) ) {
+          count <- count + 1
+        }
+      }
+      return(count)
+    }
+
+    
+    for (test_name in test_names) {
+      sanitized_name <- sanitizeTestName(test_name)
+      category_name <- test_to_category(test_name)
+      local({
+        value_inputId <- paste0(sanitized_name, "_value")
+        scale_inputId <- paste0(sanitized_name, "_scale")
+        checkbox_inputId <- paste0(sanitized_name, "_checkbox")
+        
+        # Store sanitized_name in a local environment to force evaluation
+        local_sanitized_name <- sanitized_name
+        category_name_local <- category_name
+        # Get domain name given a category 
+        domain <- category_to_domain[[category_name_local]]
+        
+        # Observe all inputs for the current test
+        observe({
+          # Update numeric input value
+          values[[value_inputId]] <- input[[value_inputId]]
+          
+          # Update select input value
+          values[[scale_inputId]] <- input[[scale_inputId]]
+          
+          # Update checkbox input value
+          values[[checkbox_inputId]] <- input[[checkbox_inputId]]
+          # Update warning message
+          observeWarningMessage(input[[value_inputId]], input[[scale_inputId]], paste0(local_sanitized_name, "_warning_message_sd"))
+        })
+        
+        # Track changes in inputs and update counters
+        observeEvent(c(input[[checkbox_inputId]], input[[value_inputId]]), {
+          count <- countValidEntries(domain)#countValidEntries()
+          # Update the selected_tests counter for the corresponding domain
+          selected_tests[[domain]] <- count
+        })
+      })
+    }
+  }
+  
+  
+  createObservers(unlist(all_tests), values)
+  
+
+  #functions to truncate repeated code 
+  
+   # Function to generate UI for a test category
+  generateTestCategoryUI <- function(category_name, test_names, selected_values) {
+    tagList(
+      generatenameUI(category_name),
+      lapply(seq_along(test_names), function(i) {
+        sanitized_name <- sanitizeTestName(test_names[i])
+        generatemeasureUI(sanitized_name, paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$cutoffSelection)
+      })
+    )
+  }
+   
+   # Create a mapping between category names and button input IDs
+   category_to_button_id <- c(
+     "Naming" = "naming_btn",
+     "Fluency" = "fluency_btn",
+     "Word List Delayed Recall" = "word_list_delayed_recall_btn",
+     "Story/Prose Delayed Recall" = "sp_delay_recall_btn",
+     "Word Pair Delayed Recall" = "wp_delay_recall_btn",
+     "Design Delayed Recall" = "d_delay_recall_btn",
+     "Set-Shifting" = "ss_btn",
+     "Problem-Solving" = "ps_btn",
+     "Response Inhibition" = "ri_btn",
+     "Attention" = "a_btn",
+     "Processing Speed" = "pro_s_btn",
+     "Visuoconstruction" = "vc_btn",
+     "Visuoperception" = "vp_btn"
+     # Add more mappings for other categories as needed
+   )
+   
+   category_to_ui_id <- gsub("_btn$", "", category_to_button_id)
+   category_to_ui_id <- sapply(category_to_ui_id, function(cat) paste0(cat, "_content_ui"))
+   
+
+   # Function to generate UI for each category
+   initializeCategoryUIs <- function(categories, category_to_ui_id, category_to_button_id) {
+     # Iterate through each category
+     lapply(categories, function(category_name) {
+       ui_output_id <- category_to_ui_id[[category_name]]
+       category_id <- category_to_button_id[[category_name]]
+       
+       # Assign dynamic output
+       output[[ui_output_id]] <- renderUI({
+         
+         if (input[[category_id]] > 0) {
+           test_names <- all_tests[[category_name]]
+           selected_values <- rep(FALSE, length(test_names))
+
+           tagList(
+             generatenameUI(category_name),
+             lapply(1:length(test_names), function(i) {
+               sanitized_name <- sanitizeTestName(test_names[i])
+               cat("Input scaleSelection:", input$scaleSelection, "\n", test_names[i],sanitized_name,"\n")
+               generatemeasureUI(test_names[i], paste0(sanitized_name, "_value"), paste0(sanitized_name, "_scale"), input$scaleSelection)
+             })
+           )
+         }
+         
+       })
+     })
+   }
+   
+   # Call the function for each category
+   initializeCategoryUIs(names(category_to_ui_id), category_to_ui_id, category_to_button_id)
+
+   # Call the function for each category
+   
+   observeEvent(input$naming_btn, {
+     # Toggle the visibility of the 'more content' div
+     toggle("naming_content")
+   })
+
+   observeEvent(input$fluency_btn, {
+     # Toggle the visibility of the 'more content' div
+     toggle("fluency_content")
+   })
+
+   observeEvent(input$word_list_delayed_recall_btn, {
+     # Toggle the visibility of the 'more content' div
+     toggle("word_list_delayed_recall_content")
+   })
+
+   observeEvent(input$sp_delay_recall_btn, {
+     toggle("sp_delay_recall_content")
+   })
+
+   observeEvent(input$wp_delay_recall_btn, {
+     toggle("wp_delay_recall_content")
+   })
+
+   observeEvent(input$d_delay_recall_btn, {
+     toggle("d_delay_recall_content")
+   })
+
+   observeEvent(input$ss_btn, {
+     toggle("ss_content")
+   })
+
+   observeEvent(input$ps_btn, {
+     toggle("ps_content")
+   })
+
+   observeEvent(input$ri_btn, {
+     toggle("ri_content")
+   })
+
+   observeEvent(input$a_btn, {
+     toggle("a_content")
+   })
+
+   observeEvent(input$pro_s_btn, {
+     toggle("pro_s_content")
+   })
+
+   observeEvent(input$vc_btn, {
+     toggle("vc_content")
+   })
+
+   observeEvent(input$vp_btn, {
+     toggle("vp_content")
+   })
+   
+   observeEvent(input$depression_btn, {
+     toggle("depression_content")
+   })
+   
+   observeEvent(input$anxiety_btn, {
+     toggle("anxiety_content")
+   })
+   
+   observeEvent(input$behavior_btn, {
+     toggle("behavior_content")
+   })
+   
+
+   #generat measureUi with observer function to check for checkbox changes 
+   generatemeasureUIMood <- function(test_name, value_inputId) {
+     interpretation <- interpretations[[test_name]]  # Get interpretation from dictionary
+     checkbox_inputId <- paste0(sanitizeTestName(test_name), "_checkbox")
+     
+     fluidRow(
+       column(5, textInput(inputId = paste0(value_inputId, "_name"), label = NULL, value = test_name, placeholder = "Enter test name", width = "100%")),
+       column(2, numericInput(inputId = value_inputId, label = NULL, value = NULL, width = "100%")),
+       column(1, div(class = "question-mark",
+                     tippy(icon("question-circle", class = "fa-2x", style = "color: black; cursor: pointer;"),
+                           tooltip = h4(HTML(interpretation)), 
+                           animation = "scale", 
+                           theme = "light")
+       ))
+     )
+     
+   }
+   
+   #generate UI for the secial mood domain
+   generateMoodCategoryUI <- function(category_name) {
+     category_id <- paste0(tolower(category_name), "_btn")
+     ui_output_id <- paste0(tolower(category_name), "_content_ui")
+     
+     output[[ui_output_id]] <- renderUI({
+       if (input[[category_id]] > 0) {
+         test_names <- mood_tests[[category_name]]
+         tagList(
+           generatenameUIMood(category_name),
+           lapply(1:length(test_names), function(i) {
+             sanitized_name <- sanitizeTestName(test_names[i])
+             generatemeasureUIMood(test_names[i], paste0(sanitized_name, "_value"))
+           })
+         )
+       }
+     })
+   }
+   
+   
+   lapply(names(mood_tests), generateMoodCategoryUI)
+   
+   #Create observers for the mood domain
+   lapply(unlist(mood_tests), function(test_name) {
+     sanitized <- sanitizeTestName(test_name)
+     value_id  <- paste0(sanitized, "_value")
+     observe({
+       # as soon as the user types a number, store it in values[[value_id]]
+       values[[value_id]] <- input[[value_id]]
+     })
+   })
+   
+   
+   # createMoodObservers(unlist(mood_tests), values) # not needed without checkboxes 
+   
+   
+   # Define a list of domain names
+   domain_names <- c("LANGUAGE", "MEMORY", "EXECUTIVE_FUNCTION", "ATTENTION_PROCESSING_SPEED", "VISUOSPATIAL")
+
+   # Generate output for each domain warning
+   lapply(domain_names, function(domain_name) {
+     output_id <- paste0(tolower(domain_name), "_warning_ui")
+     output[[output_id]] <- renderUI({
+       count <- selected_tests[[domain_name]]
+       generateDomainWarningUI(domain_name, count)
+     })
+   })
+
+  
+   #reset ###
+   resetTestCheckboxes <- function() {
+     for (test_name in unlist(all_tests)) {
+       sani_names <- sanitizeTestName(test_name)
+       shinyjs::reset(paste0(sani_names, "_checkbox"))
+     }
+   }
+   
+   # Function to reset scale selections for all tests
+   resetTestScales <- function() {
+     for (test_name in unlist(all_tests)) {
+       sani_names <- sanitizeTestName(test_name)
+       shinyjs::reset(paste0(sani_names, "_scale"))
+     }
+   }
+   
+   # Function to reset input values for all tests
+   resetTestValues <- function() {
+     for (test_name in unlist(all_tests)) {
+       sani_names <- sanitizeTestName(test_name)
+       shinyjs::reset(paste0(sani_names, "_value"))
+     }
+   }
+   
+   resetMoodTests <- function() {
+     for (test_name in unlist(mood_tests)) {
+       sani_names <- sanitizeTestName(test_name)
+       # print(paste0(sani_names, "_checkbox"))
+       shinyjs::reset(paste0(sani_names, "_value"))
+       #shinyjs::reset(paste0(sani_names, "_value"))
+     }
+   }
+
+   resetCheckedMoodCheckboxes <- function() {
+     lapply(mood_tests, function(test_name) {
+       checkbox_inputId <- paste0(sanitizeTestName(test_name), "_checkbox")
+       shinyjs::reset(checkbox_inputId)
+     })
+   }
+   
+   
+   
+  observeEvent(input$reset_button, {
+     # Reset all user selections and inputs here
+     # Reset cutoff selection
+     updateSelectInput(session, "cutoffSelection", selected = "1 standard deviation")
+     
+     resetTestCheckboxes()
+     resetTestScales()
+     resetTestValues()
+     
+     # Reset the Mood domain tests
+     #resetMoodTests() -does not work 
+     #resetMoodTests() -does not work 
+     #resetCheckedMoodCheckboxes()
+     
+     cat("Should not run unless reset is pressed")
+     
+     #hide domains 
+     toggle("naming_content")
+     toggle("fluency_content")
+     toggle("word_list_delayed_recall_content")
+     toggle("sp_delay_recall_content")
+     toggle("wp_delay_recall_content")
+     toggle("d_delay_recall_content")
+     toggle("ss_content")
+     toggle("ps_content")
+     toggle("ri_content")
+     toggle("a_content")
+     toggle("pro_s_content")
+     toggle("vc_content")
+     toggle("vp_content")
+     
+     #hide the modifiers 
+     toggle("depression_content")
+     toggle("anxiety_content")
+     toggle("behavior_content")
+     
+     # Toggle the visibility of the 'more content' div
+     toggle("output_content")
+    
+     
+   })
+  
+  #create input group #####
+  generatemeasureUI_MG <- function(test_name, value_inputId, is_preselected = FALSE) {
+    fluidRow(
+      column(6, textInput(inputId = paste0(value_inputId, "_name_MG"), label = NULL, value = test_name, placeholder = "Enter test name", width = "100%")),
+      column(2, selectInput(inputId = paste0(value_inputId, "_scale_MG"), label = NULL,
+                            choices = c("Standard Score (M=100, SD=15)", 
+                                        "Scaled Score (M=10, SD=3)", 
+                                        "T-score (M=50, SD=10)",
+                                        "Z-score (M=0, SD=1)",
+                                        "Percentile Score (%tile)"),
+                            selected = input$scaleSelection_MG, width = "100%")),
+      column(1, checkboxInput(inputId = paste0(value_inputId, "_include_MG"), label = "Include", value = is_preselected))
+    )
+  }
+  
+  generatemeasureUIMood_MG <- function(test_name, is_preselected = FALSE) {
+    fluidRow(
+      column(6, textInput(inputId = paste0(sanitizeTestName_MG(test_name), "_name_MG"), label = NULL, value = test_name, width = "100%")),
+      column(1, checkboxInput(inputId = paste0(sanitizeTestName_MG(test_name), "_include_MG"), label = "Include", value = is_preselected))
+    )
+  }
+  
+  generatemeasureUIFilter_MG <-function(filter_name, is_preselected =FALSE){
+    fluidRow(
+      column(6, textInput(inputId = paste0(sanitizeTestName_MG(filter_name),"_name_MG"), label =NULL, value = filter_name, width ="100%")),
+      column(1, checkboxInput(inputId = paste0(sanitizeTestName_MG(filter_name),"_include_MG"), label ="Include", value = is_preselected)))}
+  
+  # Utility function to sanitize test names into valid HTML IDs
+  sanitizeTestName_MG <- function(test_name) {
+    gsub("[[:space:]]|/", "_", test_name) %>% tolower()
+  }
+  
+  included_tests <- reactiveValues()
+  
+  initialize_checkboxes <-function(){
+    for(category in c(names(all_tests),names(mood_tests),names(filter_tests))){
+      if(category %in% names(all_tests)){
+         test_list <- all_tests[[category]]
+        }else if(category %in% names(mood_tests)){
+          test_list <- mood_tests[[category]]
+        }else{
+          test_list <-filter_tests[[category]]
+        }
+      for(index in seq_along(test_list)){
+        test_name <- test_list[index]
+        sanitized_name <- sanitizeTestName_MG(test_name)
+        checkbox_id <- paste0(sanitized_name,"_include_MG")# Preselect the first test in each category
+        included_tests[[checkbox_id]]<- FALSE #(index ==1)
+      }
+    }
+  }
+  
+  # Call the initialization function
+  initialize_checkboxes()
+  
+  # Initialize checkbox states for all tests, including mood tests
+  # Outquoted to have nothing preselected also not the first entry
+  # observe({
+  #   for (category in names(all_tests)) {
+  #     for (test_name in all_tests[[category]]) {
+  #       sanitized_name <- sanitizeTestName_MG(test_name)
+  #       included_tests[[sanitized_name]] <- (test_name == all_tests[[category]][1])  # Preselect first test in each category
+  #     }
+  #   }
+  #   
+  #   for (mood_category in names(mood_tests)) {
+  #     for (mood_test in mood_tests[[mood_category]]) {
+  #       sanitized_name <- sanitizeTestName_MG(mood_test)
+  #       included_tests[[sanitized_name]] <- (mood_test == mood_tests[[mood_category]][1])  # Preselect first test in each mood category
+  #     }
+  #   }
+  #   
+  #   for(filter_category in names(filter_tests)){
+  #     for(filter_test in filter_tests[[filter_category]]){
+  #       sanitized_name <- sanitizeTestName_MG(filter_test)
+  #       included_tests[[sanitized_name]]<-(filter_test == filter_tests[[filter_category]][1])# Preselect first filter in each category
+  #     }
+  #   }
+  # })
+  
+  # Dynamically render UI for standard 
+  lapply(names(all_tests), function(category) {
+    output[[paste0(sanitizeTestName_MG(category), "_content_ui_MG")]] <- renderUI({
+      test_names <- all_tests[[category]]
+      # Log test names for the category
+      lapply(seq_along(test_names), function(index) {
+        test_name <- test_names[index]
+        sanitized_name <- sanitizeTestName_MG(test_name)
+        is_preselected <- included_tests[[sanitized_name]]
+        generatemeasureUI_MG(test_name, sanitized_name, is_preselected)
+      })
+    })
+  })
+  
+  #Updates the reactive values to update the table for download created 
+  observe({
+    for (category in c(names(all_tests),names(mood_tests),names(filter_tests))) {
+      
+      if(any(category %in%names(all_tests))){
+        test_names <- all_tests[[category]]
+        } else if(any(category %in% names(mood_tests))){
+          test_names <- mood_tests[[category]]
+        }else{
+          test_names <- filter_tests[[category]]
+        }
+
+      for (test_name in test_names) {
+        sanitized_name <- sanitizeTestName_MG(test_name)
+        checkbox_id <- paste0(sanitized_name, "_include_MG")
+        # Direct check within observe to print if checkbox exists and is true
+        if (!is.null(input[[checkbox_id]])) {
+          included_tests[[checkbox_id]] <- input[[checkbox_id]]
+        }
+      }
+    }
+  })
+  
+  # Mood tests dynamic UI rendering
+  output$depression_content_ui_MG <- renderUI({
+    lapply(seq_along(mood_tests[["Depression"]]), function(index) {
+      test_name <- mood_tests[["Depression"]][index]
+      sanitized_name <- sanitizeTestName_MG(test_name)
+      is_preselected <- included_tests[[sanitized_name]]
+      generatemeasureUIMood_MG(test_name, is_preselected)
+    })
+  })
+  
+  output$anxiety_content_ui_MG <- renderUI({
+    lapply(seq_along(mood_tests[["Anxiety"]]), function(index) {
+      test_name <- mood_tests[["Anxiety"]][index]
+      sanitized_name <- sanitizeTestName_MG(test_name)
+      is_preselected <- included_tests[[sanitized_name]]
+      generatemeasureUIMood_MG(test_name, is_preselected)
+    })
+  })
+  
+  output$behavior_content_ui_MG <- renderUI({
+    lapply(seq_along(mood_tests[["Behavior"]]), function(index) {
+      test_name <- mood_tests[["Behavior"]][index]
+      sanitized_name <- sanitizeTestName_MG(test_name)
+      is_preselected <- included_tests[[sanitized_name]]
+      generatemeasureUIMood_MG(test_name, is_preselected)
+    })
+  })
+  
+  output$filters_content_ui_MG <- renderUI({
+    lapply(seq_along(filter_tests[["Filters"]]), function(index){
+      filter_name <- filter_tests[["Filters"]][index]
+      sanitized_name <- sanitizeTestName_MG(filter_name)
+      is_preselected <- included_tests[[sanitized_name]]
+      generatemeasureUIFilter_MG(filter_name, is_preselected)
+      })
+    })
+  
+  # Toggle events for the second tab ####
+  observeEvent(input$naming_btn_MG, {
+    shinyjs::toggle(id = "naming_content_MG")
+  })
+  observeEvent(input$fluency_btn_MG, {
+    shinyjs::toggle(id = "fluency_content_MG")
+  })
+  observeEvent(input$word_list_delayed_recall_btn_MG, {
+    shinyjs::toggle(id = "word_list_delayed_recall_content_MG")
+  })
+  observeEvent(input$sp_delay_recall_btn_MG, {
+    shinyjs::toggle(id = "story_prose_delayed_recall_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$wp_delay_recall_btn_MG, {
+    shinyjs::toggle(id = "word_pair_delayed_recall_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$d_delay_recall_btn_MG, {
+    shinyjs::toggle(id = "design_delayed_recall_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$ss_btn_MG, {
+    shinyjs::toggle(id = "set-shifting_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$ps_btn_MG, {
+    shinyjs::toggle(id = "problem-solving_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$ri_btn_MG, {
+    shinyjs::toggle(id = "response_inhibition_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$a_btn_MG, {
+    shinyjs::toggle(id = "attention___working_memory_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$pro_s_btn_MG, {
+    shinyjs::toggle(id = "processing_speed_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$vc_btn_MG, {
+    shinyjs::toggle(id = "visuoconstruction_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$vp_btn_MG, {
+    shinyjs::toggle(id = "visuoperception_content_MG")  # Corrected to full subdomain ID
+  })
+  observeEvent(input$depression_btn_MG, {
+    shinyjs::toggle(id = "depression_content_MG")
+  })
+  observeEvent(input$anxiety_btn_MG, {
+    shinyjs::toggle(id = "anxiety_content_MG")
+  })
+  observeEvent(input$behavior_btn_MG, {
+    shinyjs::toggle(id = "behavior_content_MG")
+  })
+  observeEvent(input$filters_btn_MG,{
+    shinyjs::toggle(id ="filters_content_MG")
+  })
+
+  #Create Output single #####
+
+
+  # Create a function to process each test and determine if it's impaired
+  is_impaired <- function(test_name, sd_threshold) {
+    score <- transform_score(values[[paste0(test_name, "_value")]], values[[paste0(test_name, "_scale")]], T)
+    return(score < (100 - (15 * sd_threshold)))
+  }
+  
+  is_evaluated <- function(test_name) {
+    raw <- values[[paste0(test_name, "_value")]]
+    num <- as.numeric(raw)
+    out <- !is.null(num) && length(num) == 1 && !is.na(num)
+    return(out)
+  }
+  
+  
+  generateTestNames <- function(category_name) {
+    test_names <- all_tests[[category_name]]
+    sanitized_names <- sapply(test_names, sanitizeTestName)
+    return(sanitized_names)
+  }
+  
+  category_groups <- list(
+    Language = c("Fluency", "Naming"),
+    Memory = c("Word List Delayed Recall", "Story/Prose Delayed Recall")
+    # Add more groups as needed
+  )
+  
+  #store output content for display and download 
+  output_html <- reactiveVal()
+
+  observeEvent(input$output_button, {
+   # output$results <- renderUI({
+      # Define the domains by grouping test categories
+      domains <- list(
+        Language = c("Naming", "Fluency"),
+        Memory = c("Word List Delayed Recall", "Story/Prose Delayed Recall", "Word Pair Delayed Recall", "Design Delayed Recall"),
+        ExecutiveFunction = c("Set-Shifting", "Problem-Solving", "Response Inhibition"),
+        AttentionProcessing = c("Attention", "Processing Speed"),
+        Visuospatial = c("Visuoconstruction", "Visuoperception")
+      )
+      
+      # Initialize lists to store results for different domains and SD thresholds
+      domain_results <- list()
+      sd_thresholds <- c(1, 1.5, 2)
+      
+      # Loop through domains and SD thresholds to analyze tests and evaluate them
+      for (domain_name in names(domains)) {
+        domain_tests <- domains[[domain_name]]
+        domain_results[[domain_name]] <- list()
+        
+        for (sd_threshold in sd_thresholds) {
+          impaired_tests <- character(0)
+          evaluated_tests <- character(0)
+          
+          for (category_name in domain_tests) {
+            test_names <- generateTestNames(category_name)
+            for (test_name in test_names) {
+
+              scale_name <- paste0(test_name, "_scale")
+              checkbox_name <- paste0(test_name, "_checkbox")
+              
+              is_eval <- is_evaluated(test_name)
+              is_imp <- is_impaired(test_name, sd_threshold)
+
+              if (is_eval) {
+                evaluated_tests <- c(evaluated_tests, test_name)
+              }
+              
+              if (is_eval && is_imp) {
+                impaired_tests <- c(impaired_tests, test_name)
+              }
+
+            }
+          }
+          
+          domain_results[[domain_name]][[as.character(sd_threshold)]] <- list(
+            EvaluatedTests = evaluated_tests,
+            ImpairedTests = impaired_tests
+          )
+        }
+      }
+    
+      # # Start the HTML with the container and headings
+      #identify imapired domains 
+      find_categories_for_names <- function(target_names, category_list) {
+        categories <- list()
+        for (target_name in target_names) {
+          found_category <- NULL
+          for (i in seq_along(category_list)) {
+            if (target_name %in% category_list[[i]]) {
+              found_category <- names(category_list)[i]
+              break  # Exit the loop when a match is found
+            }
+          }
+          categories[[target_name]] <- found_category
+        }
+        return(categories)
+      }
+      
+      # Use the category_names list to identify the domains
+      identify_domains <- function(category_names, domains) {
+        identified_domains <- list()
+        for (test_name in names(category_names)) {
+          category_name <- category_names[[test_name]]
+          for (domain in names(domains)) {
+            if (category_name %in% domains[[domain]]) {
+              identified_domains[[test_name]] <- domain
+              break  # Exit the loop when a match is found
+            }
+          }
+        }
+        return(identified_domains)
+      }
+      
+      
+      generate_impairment_output <- function(threshold_label, impairment_flags, domain_names) {
+        
+        if (!identical(impairment_flags,character(0)) & length(impairment_flags) > 0) {
+          impaired_tot <- TRUE
+          
+          # Identify domains for the test names
+          category_names <- find_categories_for_names(impairment_flags, lapply(all_tests, sanitizeTestName))
+          identified_domains <- unlist(identify_domains(category_names, domains))
+          #considers only domains as impaired withmore 2o more test impaied 
+          identified_domain_filt <- names(table(identified_domains))[which(table(identified_domains)>=2)]
+          
+          impaired_domains_int <- unique(identified_domain_filt)
+          impaired_domains <- paste(impaired_domains_int, collapse = ", ")
+        } else {
+          impaired_tot <- FALSE
+          impaired_domains <- ""
+          identified_domains <- c()
+          impaired_domains_int <- c()
+          identified_domain_filt <- character(0)
+        }
+        output1 <- paste0("Cutoff: ", threshold_label, "SD<br>",
+                          "Phenotype: ",
+                          case_when(length(unique(identified_domain_filt)) == 0~"No Impaired Domains.",
+                                    length(unique(identified_domain_filt)) == 1~"Single Domain Impairment.",
+                                    length(unique(identified_domain_filt)) == 2~"Bi-domain Impairment.",
+                                    length(unique(identified_domain_filt)) > 2~"Generalized Impairment."),"</b> <br>")
+        
+        #ensure correct display of domain names 
+        impaired_domains <- str_replace(impaired_domains, "ExecutiveFunction","Executive Function") %>% 
+          str_replace(., "AttentionProcessing","Attention Processing")
+        output_text <- paste0(output1, "Domains Impaired: ", impaired_domains, "")
+        
+        return(output_text)
+      }
+      
+      
+      output_content <- '<div class="impairment-output-container">'
+      output_content <- paste(output_content, '<h3>Impairment Analysis</h3><ul>', sep="\n") #class="impairment-summary"
+      
+      #identify how many tests were evaluated per domain
+      category_names_applied <- find_categories_for_names(c(domain_results$Language$`2`$EvaluatedTests,
+                                                    domain_results$Memory$`2`$EvaluatedTests,
+                                                    domain_results$ExecutiveFunction$`2`$EvaluatedTests,
+                                                    domain_results$AttentionProcessing$`2`$EvaluatedTests,
+                                                    domain_results$Visuospatial$`2`$EvaluatedTests), lapply(all_tests, sanitizeTestName))
+      
+      identified_domains_applied <- unlist(identify_domains(category_names_applied, domains))
+      test_p_domain <- table(identified_domains_applied) %>% unlist()
+      domain_tests_provided <- length(which(test_p_domain >= 2))
+      
+      if (domain_tests_provided < 4) {
+        output_html("The calculator will not run unless data is provided for at least 2 measures in at least 4 cognitive domains.")
+        shinyjs::show("output_content")
+        return()
+      }
+      
+      
+      # Conditional inclusion of impairment output
+      if("1 standard deviation" %in% input$cutoffSelection) {
+        output_content <- paste(output_content,
+                                generate_impairment_output("1 ",
+                                                           c(domain_results$Language$`1`$ImpairedTests, domain_results$Memory$`1`$ImpairedTests, domain_results$ExecutiveFunction$`1`$ImpairedTests, domain_results$AttentionProcessing$`1`$ImpairedTests, domain_results$Visuospatial$`1`$ImpairedTests),
+                                                           names(domains)),
+                                                           '<br/>','<br/>', sep="\n")
+      }
+      
+      if("1.5 standard deviations" %in% input$cutoffSelection) {
+        output_content <- paste(output_content,
+                                generate_impairment_output("1.5 ",
+                                                           c(domain_results$Language$`1.5`$ImpairedTests,
+                                                             domain_results$Memory$`1.5`$ImpairedTests,
+                                                             domain_results$ExecutiveFunction$`1.5`$ImpairedTests,
+                                                             domain_results$AttentionProcessing$`1.5`$ImpairedTests,
+                                                             domain_results$Visuospatial$`1.5`$ImpairedTests),
+                                                           names(domains)),
+                                                           '<br/>','<br/>', sep="\n")
+      }
+      
+      if("2 standard deviations" %in% input$cutoffSelection) {
+        output_content <- paste(output_content,
+                                generate_impairment_output("2 ",
+                                                           c(domain_results$Language$`2`$ImpairedTests,
+                                                             domain_results$Memory$`2`$ImpairedTests,
+                                                             domain_results$ExecutiveFunction$`2`$ImpairedTests,
+                                                             domain_results$AttentionProcessing$`2`$ImpairedTests,
+                                                             domain_results$Visuospatial$`2`$ImpairedTests),
+                                                           names(domains)),
+                                                           '<br/>', sep="\n")
+      }
+      
+      # Add the closing tags for the summary section
+      output_content <- paste(output_content, '<br>', sep="\n")
+      
+      #Add modifiers to the output 
+      output_content <- paste(output_content, '<h3>Modifiers</h3><ul>', sep="\n")
+      
+      # Depression modifier — pick any entered score
+      output_content <- paste(output_content, '<li>', "Depression: ", sep="\n")
+      depression_tests <- c(
+         "Beck_Depression_Inventory_(BDI-2)",
+        "Neurological_Disorders_Depression_Inventory_in_Epilepsy_(NDDI-E)",
+        "Patient_Health_Questionnaire_Depression_Scale_(PHQ-9)",
+        "Children’s_Depression_Inventory_(CDI)",
+        "Children’s_Depression_Inventory_–_Second_Edition_-_Self-Report_(CDI-2_SR)"
+      )
+      avali <- sapply(depression_tests, is_evaluated)
+      
+      if (any(avali)) {
+        sel <- depression_tests[which(avali)[1]]
+        score <- input[[paste0(sel, "_value")]]
+        pretty <- gsub("_", " ", sel)
+        output_content <- paste0(
+          output_content,
+          generate_modifier_output("Depression", pretty, score),
+          "</li>"
+        )
+      } else {
+        output_content <- paste0(output_content, "No test selected", "</li>")
+      }
+      
+      # Anxiety modifier — pick any entered score
+      output_content <- paste(output_content, '<li>', "Anxiety: ", sep="\n")
+      anxiety_tests <- c(
+        "Beck_Anxiety_Inventory_(BAI)",
+        "Generalized_Anxiety_Disorder_(GAD-7)",
+        "Multidimensional_Anxiety_Questionnaire_(MAQ)",
+        "Screen_for_Child_Anxiety_Related_Disorders_(SCARED)",
+        "Multidimensional_Anxiety_Scale_for_Children_(MASC)",
+        "Revised_Children’s_Manifest_Anxiety_Scale_(RCMAS)"
+      )
+      avali <- sapply(anxiety_tests, is_evaluated)
+      if (any(avali)) {
+        sel <- anxiety_tests[which(avali)[1]]
+        score <- input[[paste0(sel, "_value")]]
+        pretty <- gsub("_", " ", sel)
+        output_content <- paste0(
+          output_content,
+          generate_modifier_output("Anxiety", pretty, score),
+          "</li>"
+        )
+      } else {
+        output_content <- paste0(output_content, "No test selected", "</li>")
+      }
+      
+      # Behavior modifier — pick any entered score
+      output_content <- paste(output_content, '<li>', "Behavior: ", sep="\n")
+      behavior_tests <- c(
+        "Children’s_Behavior_Checklist_(CBCL)",
+        "Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Depression_Inventory",
+        "Beck_Youth_Inventories_–_Second_Edition_(BYI-2)_-_Anxiety_Inventory"
+      )
+      avali <- sapply(behavior_tests, is_evaluated)
+      if (any(avali)) {
+        sel <- behavior_tests[which(avali)[1]]
+        score <- input[[paste0(sel, "_value")]]
+        pretty <- gsub("_", " ", sel)
+        output_content <- paste0(
+          output_content,
+          generate_modifier_output("Behavior", pretty, score),
+          "</li>"
+        )
+      } else {
+        output_content <- paste0(output_content, "No test selected", "</li>")
+      }
+      
+      output_content <- paste(output_content, "<br>")
+      
+      #add considered test 
+
+      output_content <- paste(output_content, '<h3>Considered Tests</h3><ul>', sep="\n")
+ 
+      #conserv the given input names by the user 
+      fetchInputValues <- function(evaluated_tests) {
+        # Initialize a vector to store the input values
+        input_values <- character(length(evaluated_tests))
+        
+        # Iterate over each test name and collect input values
+        for (iteration in seq_along(evaluated_tests)) {
+
+          input_values[iteration] <- input[[paste0(evaluated_tests[iteration], "_value_name")]]
+        }
+        
+        return(input_values)
+      }
+
+      # Loop through each domain and display evaluated tests
+      for (domain_name in names(domains)) {
+        domain_tests <- domains[[domain_name]]
+        
+        #ensure correct spelling of domains 
+        domain_name_corr <- str_replace(domain_name, "ExecutiveFunction","Executive Function") %>% 
+          str_replace(., "AttentionProcessing","Attention Processing")
+        
+        output_content <- paste(output_content, '<li>', domain_name_corr, ': ', sep="\n")
+        output_content <- paste(output_content, paste(str_replace_all(fetchInputValues(domain_results[[domain_name]]$`1`$EvaluatedTests), "_", " "), collapse = ", "), '</li>', sep="\n")
+      }
+
+      if (domain_tests_provided == 4){
+
+        output_content <- paste0("<b> Warning:  This phenotype is based on only 4 cognitive domains.  Please ensure that all domains with high base rates for cognitive impairment in your population of interest (e.g., language and memory for TLE) are included to ensure the most accurate cognitive phenotype. </b> <br> <br>", output_content)
+
+      }
+      # Return the HTML content
+      #HTML(output_content[1])
+        
+      output_html(output_content[1])
+      
+      #print(paste("Final output_html content:", output_html()))
+      # 
+      # 
+      # # Return the HTML content
+      # HTML(output_content)
+      
+      
+      # Based on the selected output format, convert and download the content
+      
+
+  #  })
+  })
+  
+  #ensure initally hidden content is displayed 
+  observeEvent(input$output_button, {
+    shinyjs::show("output_content")
+  })
+  
+  
+  output$results <- renderUI({
+    HTML(output_html())
+  })
+  
+  output$download_link <- downloadHandler(
+    
+    filename = "results.html",
+    content = function(file) {
+      writeLines(as.character(output_html()), file)
+    },
+    contentType = "text/html"
+  )
+ 
+  
+  
+  #create output group - Download table ####
+  #map test name to domain 
+  get_domain_for_test <- function(test_name) {
+    # Iterate over all domains and categories
+    for (category in names(category_to_domain)) {
+      # Check if the test name is within the category key of all_tests or mood_tests
+      if (test_name %in% unlist(all_tests[category])) {
+        return(category_to_domain[category])
+      }
+    }
+    
+    # If not found in all_tests, check in mood_tests
+    for (mood_category in names(mood_tests)) {
+      if (test_name %in% unlist(mood_tests[mood_category])) {
+        return("MOOD")  # Assuming all mood tests fall under a single "MOOD" domain
+      }
+    }
+    
+    return("Domain not found")  # Return NA if no domain found (should ideally not happen)
+  }
+  
+  
+  # Define the download handler for the button
+  output$download_table <- downloadHandler(
+    filename = function() {
+      paste("IC-Code-Table-template", Sys.Date(), ".xlsx", sep = "")
+    },
+    content = function(file) {
+      test_names_selected <- c()
+      scales_selected <- c()
+      ori_test_names <- c()  # To store the original test names to map to domains
+      
+      # Reuse your existing logic to populate the test names and scales
+      for (category in c(names(all_tests), names(mood_tests))) {
+        test_list <- if (category %in% names(all_tests)) all_tests[[category]] else mood_tests[[category]]
+        
+        for (test_name in test_list) {
+          sanitized_name <- sanitizeTestName_MG(test_name)
+          test_name_id <- paste0(sanitized_name, "_name_MG")
+          checkbox_id <- paste0(sanitized_name, "_include_MG")
+          scale_id <- paste0(sanitized_name, "_scale_MG")
+
+                  # Use reactiveValues for the initial check and input$ for updates
+          if (isTRUE(included_tests[[checkbox_id]])) {
+            # Capturing changes to test name, scale, and checkbox
+            actual_test_name <- input[[test_name_id]]  # Capture the current value in the test name input
+            actual_test_name <- if (!is.null(input[[test_name_id]])) actual_test_name else test_name
+            
+            current_scale <- if (!is.null(input[[scale_id]])) input[[scale_id]] else input$scaleSelection_MG
+            
+            ori_test_names <- c(ori_test_names,test_name)
+            
+            # Add the actual input names and scales to the lists
+            test_names_selected <- c(test_names_selected, actual_test_name)
+            scales_selected <- c(scales_selected, current_scale)
+          }
+        }
+      }
+      
+      # Construct the table as before
+      
+      downloadtable <- tibble(StudyID = "")
+      for (i in seq_along(ori_test_names)) {
+        domain_sel <- get_domain_for_test(ori_test_names[i])
+        
+        #remove sclaes from mood tests
+        if(any(c(names(score_interpretations$Depression), names(score_interpretations$Anxiety), names(score_interpretations$Behavior)) %in% test_names_selected[i])){
+          
+          table_col <- paste(domain_sel, ":", test_names_selected[i])
+        }else{
+          table_col <- paste(domain_sel, ":", test_names_selected[i], "--", scales_selected[i])
+          
+        }
+        downloadtable[[table_col]] <- ""
+      }
+      
+      # #Add filters to the template
+      for(filter_name in filter_tests[["Filters"]]){  # Dynamically add filters
+        sanitized_name <- sanitizeTestName_MG(filter_name)
+        checkbox_id <- paste0(sanitized_name,"_include_MG")
+        # Capture the updated filter name from the UI (e.g., input$textbox for the new filter name)
+        updated_filter_name <- input[[paste0(sanitized_name, "_name_MG")]]  # Assuming a textbox holds the new name
+        if(isTRUE(included_tests[[checkbox_id]])){
+          filter_col <- paste("Filter", updated_filter_name, sep ="_")  # Use updated filter name
+          downloadtable[[filter_col]] <- ""  # Add empty columns for selected filters with updated name
+        }
+      }
+      # Write the table to the specified file path
+     # write_csv(downloadtable, file)
+      rows_max <- 10000#number of rows to applly to. 
+      downloadtable <- cbind(tibble(Legend = "Red colored numbers indicate values that exceed 2 SD above or below the mean. Please confirm that values are entered correctly."),downloadtable)
+      
+      wb <- createWorkbook()
+      addWorksheet(wb,"IC-Code-Table")# Write the table to the worksheet
+      writeData(wb,"IC-Code-Table", downloadtable)# Apply conditional formatting to score columns based on the scale
+      
+      highlight_style <- createStyle(fontColour = "#FF0000")
+      for (col_name in colnames(downloadtable)) {
+        col_idx    <- which(colnames(downloadtable) == col_name)
+        col_letter <- int2col(col_idx)
+        upper <- lower <- NULL
+        
+        if      (grepl("-- Standard Score",       col_name)) { upper <- 130; lower <-  70 }
+        else if (grepl("-- Scaled Score",         col_name)) { upper <-  16; lower <-   4 }
+        else if (grepl("-- T-score",              col_name)) { upper <-  70; lower <-  30 }
+        else if (grepl("-- Z-score",              col_name)) { upper <-   2; lower <-  -2 }
+        else if (grepl("-- Percentile Score",     col_name)) { upper <-  98; lower <-   2 }
+        
+        if (!is.null(upper)) {
+          conditionalFormatting(
+            wb, "IC-Code-Table",
+            cols = col_idx, rows = 2:rows_max,
+            rule = paste0(col_letter, "2>", upper),
+            style = highlight_style, type = "expression"
+          )
+          conditionalFormatting(
+            wb, "IC-Code-Table",
+            cols = col_idx, rows = 2:rows_max,
+            rule = paste0(col_letter, "2<", lower),
+            style = highlight_style, type = "expression"
+          )
+        }
+      }
+  # Save the workbook to the specified file path
+  saveWorkbook(wb, file, overwrite =TRUE)
+    }
+  )
+  
+  #create group result ui ####
+  
+  is_impaired_group <- function(value, sd_threshold) {
+    value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
+    case_when(
+      is.na(value) ~ "No data provided",
+      value < (100 - (15 * sd_threshold)) ~ "impaired",
+      TRUE ~ "intact"
+    )
+  }
+  
+  is_impaired_group_with_warning <- function(value, sd_threshold) {
+    value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
+    warning_threshold <- 100 - (3 * 15)
+    case_when(
+      is.na(value) ~ "No data provided",
+      value < (100 - (15 * sd_threshold)) ~ {
+        ifelse(value < warning_threshold, "impaired (Unusual low value detected)", "impaired")
+      },
+      TRUE ~ "intact"
+    )
+  }
+  
+  process_data <- function(uploaded_table, selected_cutoffs) {
+    # Modify cutoffs
+    selected_cutoffs <- str_remove(selected_cutoffs, "standard deviation") %>% str_remove(., "s") %>% as.numeric()
+    
+    # Remove columns and rows that have been accidentally added
+    accepted_columns <- c("StudyID", colnames(uploaded_table)[colnames(uploaded_table) %>% str_detect(., ":")], colnames(uploaded_table)[colnames(uploaded_table) %>% str_detect(., "Filter")])
+    uploaded_table <- uploaded_table %>% select(any_of(accepted_columns))
+    uploaded_table <- uploaded_table %>% slice(which(rowSums(!is.na(uploaded_table)) > 1))
+    
+    # add fake study ID if missing 
+    if(any(colnames(uploaded_table) == "StudyID")){
+      #do nothing all good 
+    } else{
+      # add Study ID numeric 
+      uploaded_table <- uploaded_table %>% 
+        mutate(StudyID = 1:nrow(.))
+    }
+    
+    
+    # Without StudyID and mood
+    workingtable <- uploaded_table %>% select(-StudyID, -any_of(which(str_detect(colnames(uploaded_table), "MOOD :"))), -any_of(which(str_detect(colnames(uploaded_table), "Filter_"))))
+    
+    # Mood separately
+    moodtable <- uploaded_table %>% select(which(str_detect(colnames(uploaded_table), "MOOD :")))
+    
+    # Extract filter columns
+    filtertable <- uploaded_table %>% select(starts_with("Filter_")) %>% select(where(~ !all(is.na(.))))
+    
+    # Normalize all scores regardless of which scale they used
+    workingtable_norm <- workingtable
+    for (col_i in 1:ncol(workingtable)) {
+      for (row_i in 1:nrow(workingtable)) {
+        scale_name <- colnames(workingtable)[col_i] %>% str_split("-- ", simplify = TRUE) %>% .[, 2]
+        
+        if (scale_name == "Scaled Score (M=10, SD=3)") {
+          workingtable_norm[row_i, col_i] <- scaled_to_standard(workingtable[row_i, col_i])
+        } else if (scale_name == "T-score (M=50, SD=10)") {
+          workingtable_norm[row_i, col_i] <- t_to_standard(workingtable[row_i, col_i])
+        } else if (scale_name == "Z-score (M=0, SD=1)") {
+          workingtable_norm[row_i, col_i] <- z_to_standard(workingtable[row_i, col_i])
+        } else if (scale_name == "Percentile Score (%tile)") {
+          workingtable_norm[row_i, col_i] <- percentile_to_standard(workingtable[row_i, col_i])
+        }
+      }
+    }
+    
+    domains <- c("LANGUAGE", "MEMORY", "EXECUTIVE_FUNCTION", "ATTENTION_PROCESSING_SPEED", "VISUOSPATIAL")
+    
+    process_phenotype_data <- function(workingtable, cutoff, use_warning = FALSE) {
+      func <- if (use_warning) is_impaired_group_with_warning else is_impaired_group
+      workingtable_stand <- workingtable %>% mutate(across(everything(), ~func(.x, cutoff)))
+      
+      summary_table.df <- tibble(
+        "Language Domain" = NA,
+        "Number Language Domain Tests" = NA,
+        "Memory Domain" = NA,
+        "Number Memory Domain Tests" = NA,
+        "Executive Function Domain" = NA,
+        "Number Executive Function Domain Tests" = NA,
+        "Attention/Processing Speed Domain" = NA,
+        "Number Attention/Processing Speed Domain Tests" = NA,
+        "Visuospatial Domain" = NA,
+        "Number Visuospatial Domain Tests" = NA,
+        "Phenotype" = NA, 
+        "Number of Domains" = NA
+      )
+      
+      for (domain_sel in domains) {
+        i <- which(str_detect(colnames(workingtable_stand), domain_sel))
+        domain_i <- which(domain_sel == domains)
+        number_tests <- ifelse(identical(i, integer(0)), 0, length(i))
+        
+        for (row in 1:nrow(workingtable_stand)) {
+          if (!identical(i, integer(0))) { # no data available for this domain
+            n_impaired <- workingtable_stand[row, i] %>% str_count("impaired") %>% sum()
+            n_missing <- workingtable_stand[row, i] %>% str_count("No data provided") %>% sum()
+            n_assessed <- number_tests - n_missing
+            
+            domain_class <- case_when(
+              n_impaired > 1 ~ "impaired",
+              any(workingtable_stand[row, i] != "No data provided") & n_assessed > 1 ~ "intact",
+              any(workingtable_stand[row, i] != "No data provided") ~ "Not sufficient tests provided",
+              TRUE ~ "No data provided for this domain"
+            )
+            
+            summary_table.df[row, (domain_i * 2 - 1)] <- domain_class
+            summary_table.df[row, (domain_i * 2)] <- number_tests - n_missing
+          } else {
+            summary_table.df[row, (domain_i * 2 - 1)] <- "No data provided"
+            summary_table.df[row, (domain_i * 2)] <- 0
+          }
+        }
+      }
+      
+      for (i in 1:nrow(summary_table.df)) {
+        domains_assesed <- summary_table.df[i, c(1, 3, 5, 7, 9)] %>% str_count("impaired") %>% sum() + summary_table.df[i, c(1, 3, 5, 7, 9)] %>% str_count("intact") %>% sum()
+        n_impaired <- summary_table.df[i, c(1, 3, 5, 7, 9)] %>% str_count("impaired") %>% sum()
+        
+        domain_pheno <- case_when(
+          domains_assesed < 4 ~ "Not sufficient domains assessed",
+          n_impaired == 0 ~ "Intact",
+          n_impaired == 1 ~ "Single Domain",
+          n_impaired == 2 ~ "Bi-domain",
+          n_impaired > 2 ~ "Generalized"
+        )
+        
+        summary_table.df$Phenotype[i] <- domain_pheno
+        summary_table.df$`Number of Domains`[i] <- domains_assesed
+      }
+      
+      # Mood phenotype part 
+      summary_mood.df <- moodtable
+      if (ncol(moodtable) > 0) {
+        for (testname in colnames(moodtable)) {
+          testname_short <- str_remove(testname, "MOOD : ")
+          
+          if (any(names(score_interpretations$Depression) == testname_short)) {
+            summary_mood.df[testname] <- sapply(moodtable[testname] %>% unlist(), function(score) {
+              generate_modifier_output("Depression", testname_short, score)
+            })
+          } else {
+            summary_mood.df[testname] <- sapply(moodtable[testname] %>% unlist(), function(score) {
+              generate_modifier_output("Anxiety", testname_short, score)
+            })
+          }
+        }
+      }
+      
+      summary_table.df$Cutoff <- cutoff
+      list(summary_table = summary_table.df, workingtable_stand = workingtable_stand, summary_mood = summary_mood.df)
+    }
+    
+    resultlist <- list()
+    downloadlist <- list()
+    for (cutoff in selected_cutoffs) {
+      index <- which(cutoff == selected_cutoffs)
+      result_data <- process_phenotype_data(workingtable_norm, cutoff, use_warning = FALSE)
+      download_data <- process_phenotype_data(workingtable_norm, cutoff, use_warning = TRUE)
+      
+      resultlist[[index]] <- cbind(result_data$summary_table, filtertable)
+      downloadtable <- cbind(uploaded_table %>% select(StudyID), download_data$summary_table %>% select(Phenotype, `Number of Domains`)) %>%
+        mutate(Cutoff = cutoff)
+      for (domain_sel in domains) {
+        i <- which(str_detect(colnames(result_data$workingtable_stand), domain_sel))
+        domain_i <- which(domain_sel == domains)
+        summary_table_cols <- c((domain_i * 2 - 1), (domain_i * 2))
+        
+        downloadtable <- cbind(downloadtable,
+                               download_data$summary_table %>% select(all_of(summary_table_cols)),
+                               download_data$workingtable_stand %>% select(i))
+      }
+      
+      if (ncol(moodtable) > 0) {
+        result_data$summary_table <- cbind(result_data$summary_table, result_data$summary_mood)
+        downloadtable <- cbind(downloadtable, download_data$summary_mood)
+      }
+      
+      downloadlist[[index]] <- cbind(downloadtable, filtertable)
+    }
+    
+    downloadtable_final <- tibble()
+    for (i in 1:length(downloadlist)) {
+      downloadtable_final <- rbind(downloadtable_final,downloadlist[[i]])
+    }
+    
+    return(list(resultlist = resultlist, downloadtable_final = downloadtable_final, filtertable = filtertable))
+  }
+  
+  
+  processed_data <- reactive({
+    req(input$file_upload)  # Ensure a file is uploaded
+    inFile <- input$file_upload
+    
+    if (is.null(inFile)) {
+      return(list(resultlist = NULL, downloadtable_final = NULL, filtertable = NULL))
+    }
+    
+    # Read the uploaded file
+    uploaded_table <- read_excel(inFile$datapath, guess_max = 100000)
+    
+    twolists <- process_data(uploaded_table,input$cutoffSelection_MG)
+    #print(twolists)
+    return(twolists)
+  })
+  
+  output$download_results <- downloadHandler(
+    filename = function() {
+      paste0("IC-CODE-results-", Sys.Date(), ".csv")  # Define the filename
+    },
+    content = function(file) {
+      write_csv(processed_data()$downloadtable_final, file)  # Use processed_data() reactive to get downloadtable_final
+    }
+  )
+  
+  output$filter_ui <- renderUI({
+    req(processed_data()$filtertable)  # Ensure there are filters to display
+    
+    filter_columns <- colnames(processed_data()$filtertable)
+    filter_ui_elements <- lapply(filter_columns, function(col) {
+      display_name <- str_remove(col, "^Filter_")
+      if (is.numeric(processed_data()$filtertable[[col]])) {
+        column(3, sliderInput(
+          inputId = paste0("filter_", col, "_range"),
+          label = display_name,
+          min = min(processed_data()$filtertable[[col]], na.rm = TRUE),
+          max = max(processed_data()$filtertable[[col]], na.rm = TRUE),
+          value = c(min(processed_data()$filtertable[[col]], na.rm = TRUE), 
+                    max(processed_data()$filtertable[[col]], na.rm = TRUE))
+        ))
+      } else {
+        column(3, selectInput(
+          inputId = paste0("filter_", col),
+          label = display_name,
+          multiple = TRUE,
+          choices = c("All", unique(processed_data()$filtertable[[col]])),
+          selected = "All"
+        ))
+      }
+    })
+    do.call(fluidRow, filter_ui_elements)
+  })
+  
+  
+  
+  
+  observe({
+    if (!is.null(processed_data()$resultlist)) {
+      lapply(seq_along(processed_data()$resultlist), function(i) {
+        output[[paste0("pie_chart_", i)]] <- renderPlotly({
+          df <- processed_data()$resultlist[[i]]
+          
+          # Apply filters
+          filter_columns <- colnames(processed_data()$filtertable)
+          for (col in filter_columns) {
+            if (is.numeric(processed_data()$filtertable[[col]])) {
+              range <- input[[paste0("filter_", col, "_range")]]
+              if (!is.null(range) && (range[1] != min(processed_data()$filtertable[[col]], na.rm = TRUE) || range[2] != max(processed_data()$filtertable[[col]], na.rm = TRUE))) {
+                df <- df %>% filter(get(col) >= range[1] & get(col) <= range[2] | is.na(get(col)))
+              }
+            } else {
+              selected_value <- input[[paste0("filter_", col)]]
+              if (!is.null(selected_value) && !("All" %in% selected_value)) {
+                df <- df %>% filter(get(col) %in% selected_value)
+              }
+            }
+          }
+          
+          
+          # Create a dataset summarizing impairment percentages
+          domain_columns <- c(
+            "Language Domain", 
+            "Memory Domain", 
+            "Executive Function Domain", 
+            "Attention/Processing Speed Domain", 
+            "Visuospatial Domain"
+          )
+          
+          display_names <- c(
+            "Language",
+            "Memory",
+            "Executive",
+            "Attention/Processing Speed",
+            "Visuospatial"
+          )
+          names(display_names) <- domain_columns
+          
+          df_summary <- df %>%
+            group_by(Phenotype) %>%
+            summarise(
+              `Number of individuals` = n(),
+              across(all_of(domain_columns), ~ mean(. == "impaired", na.rm = TRUE) * 100, .names = "{col}_imp_percent")
+            ) %>%
+            ungroup() %>%
+            filter(!Phenotype %in% c("Data not provided", "Not sufficient domains assessed"))
+          
+          bi_pairs <- df %>%
+            filter(Phenotype == "Bi-domain") %>%
+            mutate(
+              impaired = pmap(select(., all_of(domain_columns)), ~ c(...)),
+              impaired = map(impaired, ~ domain_columns[.x == "impaired"])
+            ) %>%
+            # each bi-domain case contributes one pair
+            mutate(pair = map_chr(impaired, ~ paste(sort(.x)[1:2], collapse = "|"))) %>%
+            count(pair) %>%
+            mutate(pct = round(100 * n / sum(n))) %>%
+            mutate(text = paste0(
+              pct, "% ",
+              pair %>%
+                str_replace("\\|", "/") %>%
+                str_replace_all(display_names)
+            )) %>%
+            summarise(text = paste(text, collapse = "\n")) %>%
+            mutate(Phenotype = "Bi-domain")
+          
+          # Adjust color panel
+          color_panel <- c(
+            "Bi-domain" = "#00545e",
+            "Generalized" = "#002f30",
+            "Intact" = "#a1c5ca", 
+            "Single Domain" = "#5598a3"
+          )
+          
+          color_panel_adj <- color_panel[which(names(color_panel) %in% unique(df_summary$Phenotype))]
+          
+          # Add text including both number of individuals and percentage impairments
+          df_summary <- df_summary %>%
+            left_join(bi_pairs, by = "Phenotype") %>%
+            rowwise() %>%
+            mutate(
+              text_info = case_when(
+                Phenotype == "Bi-domain" ~ paste0(
+                  "Number of individuals: ", `Number of individuals`, "\n", text
+                ),
+                Phenotype == "Single Domain" ~ paste0(
+                  "Number of individuals: ", `Number of individuals`, "\n",
+                  round(`Language Domain_imp_percent`), "% Language Domain\n",
+                  round(`Memory Domain_imp_percent`), "% Memory Domain\n",
+                  round(`Executive Function Domain_imp_percent`), "% Executive Domain\n",
+                  round(`Attention/Processing Speed Domain_imp_percent`), "% Attention/Processing Speed Domain\n",
+                  round(`Visuospatial Domain_imp_percent`), "% Visuospatial Domain"
+                ),
+                TRUE ~ paste0("Number of individuals: ", `Number of individuals`)
+              )
+            ) %>%
+            ungroup()
+          
+          # Create the pie chart
+          plot_ly(
+            df_summary,
+            labels = ~Phenotype,
+            values = ~`Number of individuals`,
+            type = 'pie',
+            text = ~text_info,
+            textinfo = "label+percent",
+            hoverinfo = "text",
+            marker = list(colors = color_panel_adj),
+            insidetextorientation = 'radial'
+          ) %>% layout(
+            title = paste("Phenotypes ", input$cutoffSelection_MG[i], "SD"),
+            showlegend = FALSE
+          )
+          
+        })
+      })
+    }
+  })
+  
+  
+  output$pie_charts_ui <- renderUI({
+    req(processed_data()$resultlist)  # Ensure there are results to display
+    
+    plot_count <- length(processed_data()$resultlist)
+    column_width <- if(plot_count > 0) 12 / plot_count else 12  # Dynamic column width based on number of plots
+    
+    ui_output_list <- lapply(seq_len(plot_count), function(i) {
+      column(
+        width = column_width,
+        plotlyOutput(outputId = paste0("pie_chart_", i))
+      )
+    })
+    do.call(tagList, ui_output_list)
+  })
+  
+  
+  output$file_upload_status <- renderUI({
+    req(input$file_upload)  # Ensure a file is uploaded
+    
+    # Generate UI elements only after file is processed
+    tagList(
+      h2("File uploaded and processed successfully!"),
+      h3("Select filters to apply"),
+      uiOutput("filter_ui"),
+      h3("Display results"),
+      uiOutput("pie_charts_ui"),
+      #plotlyOutput("pie_charts_display"),
+      br(),
+      h5("Access the a detailed table with the results below."),
+      downloadButton("download_results", "Download Results")
+      # # User-visible action button
+      # actionButton("start_download", "Download Results", icon = icon("download")),
+      # 
+      # # Hidden download button
+      # downloadButton("download_results", "Download", style = "display: none;")
+    )
+  })
+  
+  
+  
+})

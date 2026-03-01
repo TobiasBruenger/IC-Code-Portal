@@ -1587,6 +1587,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
   #create group result ui ####
   
   is_impaired_group <- function(value, sd_threshold) {
+    value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
     case_when(
       is.na(value) ~ "No data provided",
       value < (100 - (15 * sd_threshold)) ~ "impaired",
@@ -1595,6 +1596,7 @@ shinyServer(function(input, output, session) { ##### SERVER #####
   }
   
   is_impaired_group_with_warning <- function(value, sd_threshold) {
+    value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
     warning_threshold <- 100 - (3 * 15)
     case_when(
       is.na(value) ~ "No data provided",
