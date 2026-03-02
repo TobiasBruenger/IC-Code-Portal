@@ -1587,7 +1587,18 @@ shinyServer(function(input, output, session) { ##### SERVER #####
   #create group result ui ####
   
   is_impaired_group <- function(value, sd_threshold) {
-    value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
+    #conversion to number when possible while accounting for euopean writting of decimals 
+    x <- as.character(value)
+    
+    #check if number 
+    ok <- grepl("^\\s*[+-]?\\d+(?:[\\.,]\\d+)?\\s*$", x)
+    
+    value <- ifelse(
+      ok,
+      as.numeric(sub(",", ".", trimws(x), fixed = TRUE)),
+      NA_real_
+    )
+    
     case_when(
       is.na(value) ~ "No data provided",
       value < (100 - (15 * sd_threshold)) ~ "impaired",
@@ -1596,7 +1607,18 @@ shinyServer(function(input, output, session) { ##### SERVER #####
   }
   
   is_impaired_group_with_warning <- function(value, sd_threshold) {
-    value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
+    #conversion to number when possible while accounting for euopean writting of decimals 
+    x <- as.character(value)
+    
+    #check if number 
+    ok <- grepl("^\\s*[+-]?\\d+(?:[\\.,]\\d+)?\\s*$", x)
+    
+    value <- ifelse(
+      ok,
+      as.numeric(sub(",", ".", trimws(x), fixed = TRUE)),
+      NA_real_
+    )
+    
     warning_threshold <- 100 - (3 * 15)
     case_when(
       is.na(value) ~ "No data provided",

@@ -1,11 +1,13 @@
-uploaded_table <- read_excel("C:/Users/tobia/Downloads/Tobias Test - Large Dataset2.xlsx", guess_max = 100000)
+
+# Read the uploaded file
+uploaded_table <- read_excel("C:/Users/tobia/Downloads/test_new.xlsx", guess_max = 100000)
 
 twolists <- process_data(uploaded_table,"1")
 
-twolists$downloadtable_final %>% View()
 
 
 is_impaired_group <- function(value, sd_threshold) {
+  value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
   case_when(
     is.na(value) ~ "No data provided",
     value < (100 - (15 * sd_threshold)) ~ "impaired",
@@ -14,6 +16,7 @@ is_impaired_group <- function(value, sd_threshold) {
 }
 
 is_impaired_group_with_warning <- function(value, sd_threshold) {
+  value <- suppressWarnings(as.numeric(value)) #only numbers accepted. Ensures values are read as numeric even if the column is read as chaarcter because user inputs text in some columns. 
   warning_threshold <- 100 - (3 * 15)
   case_when(
     is.na(value) ~ "No data provided",

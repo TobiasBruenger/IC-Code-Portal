@@ -1,0 +1,46 @@
+is_impaired_group_with_warning <- function(value, sd_threshold) {
+  
+  #conversion to number when possible while accounting for euopean writting of decimals 
+  x <- as.character(value)
+  
+  ok <- grepl("^\\s*[+-]?\\d+(?:[\\.,]\\d+)?\\s*$", x)
+
+  value <- ifelse(
+    ok,
+    as.numeric(sub(",", ".", trimws(x), fixed = TRUE)),
+    NA_real_
+  )
+
+  warning_threshold <- 100 - (3 * 15)
+  case_when(
+    is.na(value) ~ "No data provided",
+    value < (100 - (15 * sd_threshold)) ~ {
+      ifelse(value < warning_threshold, "impaired (Unusual low value detected)", "impaired")
+    },
+    TRUE ~ "intact"
+  )
+}
+
+func <- if (use_warning) is_impaired_group_with_warning else is_impaired_group
+
+workingtable %>%
+  slice(1:10) %>% 
+  mutate(test = c("90","50","70.1","70,2","70,200,3",".","test","90","50","70.1")) %>% 
+  mutate(test_new = func(test,1)) %>% select(test,test_new)
+  mutate(`LANGUAGE : BNT -- Standard Score (M=100, SD=15)` = str_replace(`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`,"\\.",",")) %>% 
+  mutate(test_new = func(`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`,1)) %>% 
+  slice(1:10) %>% 
+  select(`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`, test_new)
+  
+  
+for(i in 1:nrow(uploaded_table)){
+  
+  value <- suppressWarnings(as.numeric(uploaded_table$`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`[i]))
+  
+  if(is.na(value) == !is.na(uploaded_table$`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`[i])){
+    print(uploaded_table$`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`[i])
+    print(i)
+    print(uploaded_table$`LANGUAGE : BNT -- Standard Score (M=100, SD=15)`[i-1])
+  }
+  
+}
